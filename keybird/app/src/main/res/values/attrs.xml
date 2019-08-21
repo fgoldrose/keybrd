@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="KeyboardView">
-        <attr name="square_color" format="color"/>
         <attr name="inner_percent" format="float"/>
         <attr name="outer_percent" format="float"/>
+        <attr name="button_percent" format="float"/>
     </declare-styleable>
 </resources>

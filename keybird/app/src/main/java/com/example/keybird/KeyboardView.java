@@ -19,14 +19,12 @@ import java.util.Map;
 
 public class KeyboardView extends View {
 
-    Paint mPaint, otherPaint, outerPaint, mTextPaint;
-    Rect mRect;
     RectF kb;
-    int mSquareColor;
     float outerpercent;
     float innerpercent;
     int highlighted;
     int mode;
+    float buttonpercent;
 
     public KeyboardView(Context context){
         super(context);
@@ -42,8 +40,6 @@ public class KeyboardView extends View {
     }
 
     private void init(@Nullable AttributeSet set){
-        mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mRect = new Rect();
         kb = new RectF();
         highlighted=-1;
         mode = 0;
@@ -52,10 +48,9 @@ public class KeyboardView extends View {
             return;
         }
         TypedArray ta = getContext().obtainStyledAttributes(set, R.styleable.KeyboardView);
-        mSquareColor = ta.getColor(R.styleable.KeyboardView_square_color, Color.GREEN);
-        mPaint.setColor(mSquareColor);
         outerpercent = ta.getFloat(R.styleable.KeyboardView_outer_percent, 1);
         innerpercent = ta.getFloat(R.styleable.KeyboardView_inner_percent, 1/2);
+        buttonpercent = ta.getFloat(R.styleable.KeyboardView_button_percent, 1/4);
         ta.recycle();
     }
 
@@ -64,9 +59,121 @@ public class KeyboardView extends View {
         super.onDraw(canvas);
         float outerradius = outerpercent * getHeight()/2;
         float innerradius = innerpercent * outerradius;
+        float buttonradius = buttonpercent * getHeight()/2;
         float centerx = getWidth() /2;
         float centery = getHeight() /2;
 
+        float textrad = outerradius;
+        float angle = 1 / (float) Math.sqrt(2);
+        float x1 = centerx;
+        float y1 = centery + textrad;
+        float x2 = centerx + angle * textrad;
+        float y2 = centery + angle * textrad;
+        float x3 = centerx + textrad;
+        float y3 = centery;
+        float x4 = centerx + angle * textrad;
+        float y4 = centery - angle * textrad;
+        float x5 = centerx;
+        float y5 = centery - textrad;
+        float x6 = centerx - angle * textrad;
+        float y6 = centery - angle * textrad;
+        float x7 = centerx - textrad;
+        float y7 = centery;
+        float x8 = centerx - angle * textrad;
+        float y8 = centery + angle * textrad;
+
+        Paint p1 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p1.setStyle(Paint.Style.STROKE);
+        Paint p2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p2.setStyle(Paint.Style.STROKE);
+        Paint p3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p3.setStyle(Paint.Style.STROKE);
+        Paint p4 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p4.setStyle(Paint.Style.STROKE);
+        Paint p5 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p5.setStyle(Paint.Style.STROKE);
+        Paint p6 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p6.setStyle(Paint.Style.STROKE);
+        Paint p7 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p7.setStyle(Paint.Style.STROKE);
+        Paint p8 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p8.setStyle(Paint.Style.STROKE);
+        Paint pc = new Paint(Paint.ANTI_ALIAS_FLAG);
+        pc.setStyle(Paint.Style.STROKE);
+
+        /*
+        Paint p1 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p1.setColor(Color.GREEN);
+        Paint p2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p2.setColor(Color.BLUE);
+        Paint p3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p3.setColor(Color.RED);
+        Paint p4 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p4.setColor(Color.MAGENTA);
+        Paint p5 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p5.setColor(Color.YELLOW);
+        Paint p6 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p6.setColor(Color.CYAN);
+        Paint p7 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p7.setColor(Color.DKGRAY);
+        Paint p8 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p8.setColor(Color.LTGRAY);
+        Paint pc = new Paint(Paint.ANTI_ALIAS_FLAG);
+        pc.setColor(Color.GRAY);
+        */
+        canvas.drawCircle(x1, y1, buttonradius, p1);
+        canvas.drawCircle(x2, y2, buttonradius, p2);
+        canvas.drawCircle(x3, y3, buttonradius, p3);
+        canvas.drawCircle(x4, y4, buttonradius, p4);
+        canvas.drawCircle(x5, y5, buttonradius, p5);
+        canvas.drawCircle(x6, y6, buttonradius, p6);
+        canvas.drawCircle(x7, y7, buttonradius, p7);
+        canvas.drawCircle(x8, y8, buttonradius, p8);
+        canvas.drawCircle(centerx, centery, innerradius, pc);
+
+        Paint hlpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        hlpaint.setStyle(Paint.Style.STROKE);
+        float hlgap = 10;
+        switch(highlighted){
+            case 1:
+                canvas.drawCircle(x1, y1, buttonradius + hlgap, hlpaint); break;
+            case 2:
+                canvas.drawCircle(x2, y2, buttonradius + hlgap, hlpaint); break;
+            case 3:
+                canvas.drawCircle(x3, y3, buttonradius + hlgap, hlpaint); break;
+            case 4:
+                canvas.drawCircle(x4, y4, buttonradius + hlgap, hlpaint); break;
+            case 5:
+                canvas.drawCircle(x5, y5, buttonradius + hlgap, hlpaint); break;
+            case 6:
+                canvas.drawCircle(x6, y6, buttonradius + hlgap, hlpaint); break;
+            case 7:
+                canvas.drawCircle(x7, y7, buttonradius + hlgap, hlpaint); break;
+            case 8:
+                canvas.drawCircle(x8, y8, buttonradius + hlgap, hlpaint); break;
+            case 0:
+                canvas.drawCircle(centerx, centery, innerradius + hlgap, hlpaint); break;
+            default:
+                ;
+        }
+
+        Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textpaint.setColor(Color.BLACK);
+        textpaint.setTextSize(60);
+        textpaint.setTextAlign(Paint.Align.CENTER);
+
+        canvas.drawText(Character.toString(charCode(highlighted, 1)), x1, y1, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 2)), x2, y2, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 3)), x3, y3, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 4)), x4, y4, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 5)), x5, y5, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 6)), x6, y6, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 7)), x7, y7, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 8)), x8, y8, textpaint);
+
+
+        // BELOW is the old code to draw segments!
+        /*
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setColor(Color.GRAY);
         RectF kb = new RectF();
@@ -106,8 +213,7 @@ public class KeyboardView extends View {
         Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textpaint.setColor(Color.BLACK);
         textpaint.setTextSize(60);
-        float textrad = (innerradius + outerradius) / 2;
-        float angle = 1 / (float) Math.sqrt(2);
+
         canvas.drawText(Character.toString(charCode(highlighted, 1)), centerx, centery + textrad, textpaint);
         canvas.drawText(Character.toString(charCode(highlighted, 2)), centerx + angle * textrad, centery + angle * textrad, textpaint);
         canvas.drawText(Character.toString(charCode(highlighted, 3)), centerx + textrad, centery, textpaint);
@@ -116,8 +222,8 @@ public class KeyboardView extends View {
         canvas.drawText(Character.toString(charCode(highlighted, 6)), centerx - angle * textrad, centery - angle * textrad, textpaint);
         canvas.drawText(Character.toString(charCode(highlighted, 7)), centerx - textrad, centery, textpaint);
         canvas.drawText(Character.toString(charCode(highlighted, 8)), centerx - angle * textrad, centery + angle * textrad, textpaint);
+        */
     }
-
 
     public char charCode(int from, int to) {
         int code;
