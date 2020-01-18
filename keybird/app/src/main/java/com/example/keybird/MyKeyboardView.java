@@ -5,19 +5,15 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.RectF;
-import android.os.Build;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.View;
-import android.graphics.Path;
-import java.util.HashMap;
-import java.util.Map;
+import android.inputmethodservice.KeyboardView;
+import android.widget.RelativeLayout;
 
 
-public class KeyboardView extends View {
+public class MyKeyboardView extends View {
 
     RectF kb;
     float outerpercent;
@@ -26,15 +22,11 @@ public class KeyboardView extends View {
     int mode;
     float buttonpercent;
 
-    public KeyboardView(Context context){
-        super(context);
-        init(null);
-    }
-    public KeyboardView(Context context, @Nullable AttributeSet attrs){
+    public MyKeyboardView(Context context, @Nullable AttributeSet attrs){
         super(context, attrs);
         init(attrs);
     }
-    public KeyboardView(Context context, @Nullable AttributeSet attrs, int defStyleAttr){
+    public MyKeyboardView(Context context, @Nullable AttributeSet attrs, int defStyleAttr){
         super(context, attrs, defStyleAttr);
         init(attrs);
     }
@@ -47,15 +39,18 @@ public class KeyboardView extends View {
         if(set == null){
             return;
         }
-        TypedArray ta = getContext().obtainStyledAttributes(set, R.styleable.KeyboardView);
-        outerpercent = ta.getFloat(R.styleable.KeyboardView_outer_percent, 1);
-        innerpercent = ta.getFloat(R.styleable.KeyboardView_inner_percent, 1/2);
-        buttonpercent = ta.getFloat(R.styleable.KeyboardView_button_percent, 1/4);
-        ta.recycle();
+        innerpercent= (float) 0.5;
+        outerpercent= (float)  0.7;
+        buttonpercent= (float) 0.2;
+        //TypedArray ta = getContext().obtainStyledAttributes(set, R.styleable.MyKeyboardView);
+        //outerpercent = ta.getFloat(R.styleable.MyKeyboardView_outer_percent, 1);
+        //innerpercent = ta.getFloat(R.styleable.MyKeyboardView_inner_percent, 1/2);
+        // buttonpercent = ta.getFloat(R.styleable.MyKeyboardView_button_percent, 1/4);
+        //ta.recycle();
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         float outerradius = outerpercent * getHeight()/2;
         float innerradius = innerpercent * outerradius;

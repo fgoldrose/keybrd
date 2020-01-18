@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<View xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rv"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+    <com.example.keybird.MyKeyboardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/kbv"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    android:layout_gravity="bottom"
+    android:layout_alignParentBottom="true"
+    android:layout_centerInParent="true"
+    >
+
+</com.example.keybird.MyKeyboardView>
+
+
+</View>
+
+
+
+
+

@@ -1,18 +1,29 @@
 package com.example.keybird;
 
+import android.renderscript.ScriptGroup;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethod;
 import android.widget.TextView;
-import android.graphics.Canvas;
+import android.content.ServiceConnection;
+import android.view.inputmethod.InputConnection;
+import android.inputmethodservice.InputMethodService;
+import android.inputmethodservice.KeyboardView;
+import android.inputmethodservice.Keyboard;
+import android.view.inputmethod.CompletionInfo;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
+
 
 public class MyTouchListener implements View.OnTouchListener {
     private int start = -1;
     double longpresstime = 500;
 
-    private KeyboardView kb;
-    private TextView display;
+    private MyKeyboardView kb;
+    private InputConnection display;
 
-    public MyTouchListener(KeyboardView kb, TextView display){
+    public MyTouchListener(MyKeyboardView kb, InputConnection display){
         this.kb = kb;
         this.display = display;
     }
@@ -23,7 +34,6 @@ public class MyTouchListener implements View.OnTouchListener {
         double outerradius = this.kb.outerpercent * this.kb.getHeight()/2;
         double innerradius = this.kb.innerpercent * outerradius;
         double buttonradius = this.kb.buttonpercent * this.kb.getHeight()/2;
-
         int seg = getSegment(event.getX(), event.getY(),
                  v.getWidth()/2, v.getHeight()/2, outerradius, innerradius, buttonradius);
         if(event.getAction() == MotionEvent.ACTION_UP){
@@ -37,8 +47,7 @@ public class MyTouchListener implements View.OnTouchListener {
                     }
                 }
                 else {
-                    String displaytext = display.getText() + " ";
-                    display.setText(displaytext);
+                    display.commitText(" ", 1);
                 }
             }
             start = -1;
@@ -53,8 +62,7 @@ public class MyTouchListener implements View.OnTouchListener {
                 if (add == "") {
                     add = "(" + Integer.toString(start) + Integer.toString(seg) + ")";
                 }
-                String displaytext = display.getText() + add;
-                display.setText(displaytext);
+                display.commitText(add, 1);
                 start = seg;
             }
             kb.highlighted = start;

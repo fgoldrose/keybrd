@@ -2,12 +2,7 @@ package com.example.keybird;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.TextView;
-import android.view.View.OnTouchListener;
-import android.view.MotionEvent;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 
 public class MainActivity extends AppCompatActivity {
     @Override
@@ -15,10 +10,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final KeyboardView kb = findViewById(R.id.kb);
+        final MyKeyboardView kb = findViewById(R.id.kb);
         final TextView display = findViewById(R.id.disp);
 
-        kb.setOnTouchListener(new MyTouchListener(kb, display));
+        //kb.setOnTouchListener(new MyTouchListener(kb),);
     }
 /*
     @Override
