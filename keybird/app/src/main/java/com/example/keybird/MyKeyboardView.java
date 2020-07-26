@@ -156,15 +156,18 @@ public class MyKeyboardView extends View {
         textpaint.setColor(Color.BLACK);
         textpaint.setTextSize(60);
         textpaint.setTextAlign(Paint.Align.CENTER);
+        float textHeight = textpaint.descent() - textpaint.ascent();
+        float textOffset = (textHeight / 2) - textpaint.descent();
 
-        canvas.drawText(Character.toString(charCode(highlighted, 1)), x1, y1, textpaint);
-        canvas.drawText(Character.toString(charCode(highlighted, 2)), x2, y2, textpaint);
-        canvas.drawText(Character.toString(charCode(highlighted, 3)), x3, y3, textpaint);
-        canvas.drawText(Character.toString(charCode(highlighted, 4)), x4, y4, textpaint);
-        canvas.drawText(Character.toString(charCode(highlighted, 5)), x5, y5, textpaint);
-        canvas.drawText(Character.toString(charCode(highlighted, 6)), x6, y6, textpaint);
-        canvas.drawText(Character.toString(charCode(highlighted, 7)), x7, y7, textpaint);
-        canvas.drawText(Character.toString(charCode(highlighted, 8)), x8, y8, textpaint);
+
+        canvas.drawText(Character.toString(charCode(highlighted, 1)), x1, y1 + textOffset, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 2)), x2, y2 + textOffset, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 3)), x3, y3 + textOffset, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 4)), x4, y4 + textOffset, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 5)), x5, y5 + textOffset, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 6)), x6, y6 + textOffset, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 7)), x7, y7 + textOffset, textpaint);
+        canvas.drawText(Character.toString(charCode(highlighted, 8)), x8, y8 + textOffset, textpaint);
 
 
         // BELOW is the old code to draw segments!
