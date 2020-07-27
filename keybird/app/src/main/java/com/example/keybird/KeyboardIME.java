@@ -1,7 +1,10 @@
 package com.example.keybird;
 
 import android.inputmethodservice.InputMethodService;
+import android.support.v4.view.KeyEventDispatcher;
+import android.view.KeyEvent;
 import android.view.View;
+
 
 
 public class KeyboardIME extends InputMethodService implements MyKeyboardView.MyListener {
@@ -19,5 +22,12 @@ public class KeyboardIME extends InputMethodService implements MyKeyboardView.My
     }
     public void onBackspace(){
         getCurrentInputConnection().deleteSurroundingText(1,0);
+    }
+
+    public void onEnter(){
+        sendDefaultEditorAction(true);
+
+        //getCurrentInputConnection().sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
+
     }
 }

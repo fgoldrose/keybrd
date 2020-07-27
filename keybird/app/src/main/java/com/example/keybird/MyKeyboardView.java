@@ -9,6 +9,9 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.Dictionary;
+import java.util.Hashtable;
+
 public class MyKeyboardView extends View {
     public MyKeyboardView(Context context, @Nullable AttributeSet attrs){
         super(context, attrs);
@@ -25,6 +28,7 @@ public class MyKeyboardView extends View {
     int highlighted = -1;
     int mode = 0;
     private int start = -1;
+    private int tentative = -1;
     double longpresstime = 500;
 
     private MyListener listener = null;
@@ -32,14 +36,12 @@ public class MyKeyboardView extends View {
     public interface MyListener {
         void onKey(String text);
         void onBackspace();
+        void onEnter();
     }
-
 
     public void setListener(MyListener listener){
         this.listener = listener;
     }
-
-
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -48,25 +50,20 @@ public class MyKeyboardView extends View {
         float buttonradius = buttonpercent * getHeight()/2;
         float centerx = getWidth() /2;
         float centery = getHeight() /2;
-        int seg = getSegment(event.getX(), event.getY(),
-                centerx, centery, outerradius, innerradius, buttonradius);
+        float ex = event.getX();
+        float ey = event.getY();
+
+        int seg = getSegment(ex, ey, centerx, centery, outerradius, innerradius, buttonradius);
+
         if(event.getAction() == MotionEvent.ACTION_UP){
+            if(tentative != -1){
+                listener.onKey(charCode(start, tentative));
+                tentative = -1;
+            }
             if(start == 0 && seg == 0){
                 // Center button
-
-                if(event.getEventTime() - event.getDownTime() >= longpresstime){
-                    // Trigger mode change
-                    if(mode == 0){
-                        mode = 1;
-                    }
-                    else if(mode == 1){
-                        mode = 0;
-                    }
-                }
-                else {
-                    if(listener != null)
-                        listener.onKey(" ");
-                }
+                if(listener != null)
+                    listener.onKey(" ");
             }
             start = -1;
             this.highlighted = start;
@@ -77,16 +74,65 @@ public class MyKeyboardView extends View {
                 // First button touched
                 start = seg;
             }
-            else if (start != seg && seg != 0 && seg != -1) {
-                // Second button touched
+            else if (seg != 0 && seg != -1) {
+                if (start != seg) {
+                    // Second button touched
 
-                if(start == 0 && seg == 7 && listener != null){
-                    listener.onBackspace();
+                    if (start == 0 && seg == 7) {
+                        listener.onBackspace();
+                    }
+                    else if(start == 0 && seg == 3) {
+                        listener.onEnter();
+                    }
+                    else if (start == 0 && seg == 5) {
+                        if (mode == 0) {
+                            mode = 1;
+                        } else if (mode == 1) {
+                            mode = 0;
+                        }
+                    } else if (tentative != -1) {
+                        if(tentative == seg){
+                            if(distance(centerx, centery, ex, ey) >= (outerradius + innerradius) * 2/3){
+                                listener.onKey(charCode(start, seg));
+                                tentative = -1;
+                            }
+                            else {
+                                return true;
+                            }
+                        }
+                        // process existing tentative value
+                        if (Math.abs(tentative - seg) == 1) {
+                            // likely tentative value was wrong
+                            listener.onKey(charCode(start, seg));
+                        }
+                        else {
+                            // tentative was probably correct, both actions should be processed
+                            listener.onKey(charCode(start,  tentative));
+                            listener.onKey(charCode(tentative,  seg));
+                        }
+                        tentative = -1;
+                    } else {
+                        if (start != 0 && Math.abs(start - seg) == 1
+                                && distance(centerx, centery, ex, ey) < (outerradius + innerradius) * 2/3) {
+                            //Neighboring positions, and within area of ambiguity.
+                            // Set tentative key value, but don't process until seeing if the
+                            // next segment touched is the next over neighbor.
+                            tentative = seg;
+                            //System.out.println("TENTATIVE");
+                            return true;
+                        }
+
+                        listener.onKey(charCode(start, seg));
+                    }
+                    start = seg;
                 }
-                else if (listener != null){
-                    listener.onKey(charCode(start, seg));
+                else if(tentative != -1 && listener != null){
+                    // we have a tentative value and start==seg, so likely tentative was correct
+                    listener.onKey(charCode(start,  tentative));
+                    listener.onKey(charCode(tentative,  seg));
+                    tentative = -1;
                 }
-                start = seg;
+
             }
 
             this.highlighted = start;
@@ -96,105 +142,83 @@ public class MyKeyboardView extends View {
     }
 
     @Override
-    public void onDraw(Canvas canvas) {
+    public void onDraw(final Canvas canvas) {
         super.onDraw(canvas);
 
-        float outerradius = outerpercent * getHeight()/2;
-        float innerradius = innerpercent * outerradius;
-        float buttonradius = buttonpercent * getHeight()/2;
-        float centerx = getWidth() /2;
-        float centery = getHeight() /2;
+        final float outerradius = outerpercent * getHeight()/2;
+        final float innerradius = innerpercent * outerradius;
+        final float buttonradius = buttonpercent * getHeight()/2;
+        final float centerx = getWidth() /2;
+        final float centery = getHeight() /2;
+
+        class Key {
+            int position;
+            float cx;
+            float cy;
+
+            Key(int p, float cx, float cy){
+                this.position = p;
+                this.cx = cx;
+                this.cy = cy;
+            }
+
+            void drawKey(){
+                float rad = buttonradius;
+                if (position == 0){
+                    rad = innerradius;
+                }
+                Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                paint.setStyle(Paint.Style.STROKE);
+
+                canvas.drawCircle(cx, cy, rad, paint);
+
+                if(highlighted == position) {
+                    Paint hlpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    hlpaint.setStyle(Paint.Style.STROKE);
+
+                    canvas.drawCircle(cx, cy, rad + 10, hlpaint);
+                }
+
+                if(position != 0) {
+
+                    Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    textpaint.setColor(Color.BLACK);
+                    textpaint.setTextSize(60);
+                    textpaint.setTextAlign(Paint.Align.CENTER);
+                    float textHeight = textpaint.descent() - textpaint.ascent();
+                    float textOffset = (textHeight / 2) - textpaint.descent();
+
+                    canvas.drawText(charCode(highlighted, position), cx, cy + textOffset, textpaint);
+                }
+
+            }
+        }
 
         float textrad = outerradius;
         float angle = 1 / (float) Math.sqrt(2);
-        float x1 = centerx;
-        float y1 = centery + textrad;
-        float x2 = centerx + angle * textrad;
-        float y2 = centery + angle * textrad;
-        float x3 = centerx + textrad;
-        float y3 = centery;
-        float x4 = centerx + angle * textrad;
-        float y4 = centery - angle * textrad;
-        float x5 = centerx;
-        float y5 = centery - textrad;
-        float x6 = centerx - angle * textrad;
-        float y6 = centery - angle * textrad;
-        float x7 = centerx - textrad;
-        float y7 = centery;
-        float x8 = centerx - angle * textrad;
-        float y8 = centery + angle * textrad;
 
-        Paint p1 = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p1.setStyle(Paint.Style.STROKE);
-        Paint p2 = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p2.setStyle(Paint.Style.STROKE);
-        Paint p3 = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p3.setStyle(Paint.Style.STROKE);
-        Paint p4 = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p4.setStyle(Paint.Style.STROKE);
-        Paint p5 = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p5.setStyle(Paint.Style.STROKE);
-        Paint p6 = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p6.setStyle(Paint.Style.STROKE);
-        Paint p7 = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p7.setStyle(Paint.Style.STROKE);
-        Paint p8 = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p8.setStyle(Paint.Style.STROKE);
-        Paint pc = new Paint(Paint.ANTI_ALIAS_FLAG);
-        pc.setStyle(Paint.Style.STROKE);
-
-        canvas.drawCircle(x1, y1, buttonradius, p1);
-        canvas.drawCircle(x2, y2, buttonradius, p2);
-        canvas.drawCircle(x3, y3, buttonradius, p3);
-        canvas.drawCircle(x4, y4, buttonradius, p4);
-        canvas.drawCircle(x5, y5, buttonradius, p5);
-        canvas.drawCircle(x6, y6, buttonradius, p6);
-        canvas.drawCircle(x7, y7, buttonradius, p7);
-        canvas.drawCircle(x8, y8, buttonradius, p8);
-        canvas.drawCircle(centerx, centery, innerradius, pc);
-
-        Paint hlpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        hlpaint.setStyle(Paint.Style.STROKE);
-        float hlgap = 10;
-        switch(highlighted){
-            case 1:
-                canvas.drawCircle(x1, y1, buttonradius + hlgap, hlpaint); break;
-            case 2:
-                canvas.drawCircle(x2, y2, buttonradius + hlgap, hlpaint); break;
-            case 3:
-                canvas.drawCircle(x3, y3, buttonradius + hlgap, hlpaint); break;
-            case 4:
-                canvas.drawCircle(x4, y4, buttonradius + hlgap, hlpaint); break;
-            case 5:
-                canvas.drawCircle(x5, y5, buttonradius + hlgap, hlpaint); break;
-            case 6:
-                canvas.drawCircle(x6, y6, buttonradius + hlgap, hlpaint); break;
-            case 7:
-                canvas.drawCircle(x7, y7, buttonradius + hlgap, hlpaint); break;
-            case 8:
-                canvas.drawCircle(x8, y8, buttonradius + hlgap, hlpaint); break;
-            case 0:
-                canvas.drawCircle(centerx, centery, innerradius + hlgap, hlpaint); break;
-            default:
-                ;
-        }
-
-        Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textpaint.setColor(Color.BLACK);
-        textpaint.setTextSize(60);
-        textpaint.setTextAlign(Paint.Align.CENTER);
-        float textHeight = textpaint.descent() - textpaint.ascent();
-        float textOffset = (textHeight / 2) - textpaint.descent();
+        new Key(0, centerx, centery).drawKey();
+        new Key(1, centerx, centery + textrad).drawKey();
+        new Key(2,centerx + angle * textrad, centery + angle * textrad).drawKey();
+        new Key(3,centerx + textrad, centery).drawKey();
+        new Key(4,centerx + angle * textrad, centery - angle * textrad).drawKey();
+        new Key(5,centerx, centery - textrad).drawKey();
+        new Key(6,centerx - angle * textrad, centery - angle * textrad).drawKey();
+        new Key(7,centerx - textrad, centery).drawKey();
+        new Key(8,centerx - angle * textrad, centery + angle * textrad).drawKey();
 
 
-        canvas.drawText(charCode(highlighted, 1), x1, y1 + textOffset, textpaint);
-        canvas.drawText(charCode(highlighted, 2), x2, y2 + textOffset, textpaint);
-        canvas.drawText(charCode(highlighted, 3), x3, y3 + textOffset, textpaint);
-        canvas.drawText(charCode(highlighted, 4), x4, y4 + textOffset, textpaint);
-        canvas.drawText(charCode(highlighted, 5), x5, y5 + textOffset, textpaint);
-        canvas.drawText(charCode(highlighted, 6), x6, y6 + textOffset, textpaint);
-        canvas.drawText(charCode(highlighted, 7), x7, y7 + textOffset, textpaint);
-        canvas.drawText(charCode(highlighted, 8), x8, y8 + textOffset, textpaint);
+        /*
+        Dictionary<Integer, Key> positions = new Hashtable<Integer, Key>();
+        positions.put(1, new Key(1, centerx, centery + textrad));
+        positions.put(2, new Key(2,centerx + angle * textrad, centery + angle * textrad));
+        positions.put(3, new Key(3,centerx + textrad, centery));
+        positions.put(4, new Key(4,centerx + angle * textrad, centery - angle * textrad));
+        positions.put(5, new Key(5,centerx, centery - textrad));
+        positions.put(6, new Key(6,centerx - angle * textrad, centery - angle * textrad));
+        positions.put(7, new Key(7,centerx - textrad, centery));
+        positions.put(8, new Key(8,centerx - angle * textrad, centery + angle * textrad));
+        */
     }
 
     public String charCode(int from, int to) {
@@ -212,10 +236,28 @@ public class MyKeyboardView extends View {
             case 2:
                 return "?";
             case 3:
+                return "Enter";
+            case 5:
+                return "CAPS";
+            case 6:
                 return "!";
             case 7:
                 return "<--";
             case 8:
+                return ",";
+            case 101:
+                return ".";
+            case 102:
+                return "?";
+            case 103:
+                return "Enter";
+            case 105:
+                return "lower";
+            case 106:
+                return "!";
+            case 107:
+                return "<--";
+            case 108:
                 return ",";
 
             case 13:
@@ -270,6 +312,59 @@ public class MyKeyboardView extends View {
                 return "e";
             case 45:
                 return "f";
+            //CAPS
+            case 113:
+                return "Y";
+            case 124:
+                return "W";
+            case 134:
+                return "Q";
+            case 116:
+                return "R";
+            case 128:
+                return "Z";
+            case 146:
+                return "D";
+            case 157:
+                return "S";
+            case 112:
+                return "A";
+            case 178:
+                return "K";
+            case 135:
+                return "U";
+            case 115:
+                return "O";
+            case 147:
+                return "V";
+            case 118:
+                return "P";
+            case 168:
+                return "X";
+            case 136:
+                return "L";
+            case 156:
+                return "I";
+            case 127:
+                return "H";
+            case 117:
+                return "C";
+            case 125:
+                return "T";
+            case 114:
+                return "J";
+            case 158:
+                return "M";
+            case 126:
+                return "N";
+            case 137:
+                return "B";
+            case 123:
+                return "G";
+            case 167:
+                return "E";
+            case 145:
+                return "F";
 
             default:
                 return "";
