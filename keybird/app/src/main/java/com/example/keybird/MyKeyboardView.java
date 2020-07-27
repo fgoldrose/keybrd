@@ -29,7 +29,8 @@ public class MyKeyboardView extends View {
     int mode = 0;
     private int start = -1;
     private int tentative = -1;
-    double longpresstime = 500;
+    double backspacetime = 200;
+    long lastBack = -1;
 
     private MyListener listener = null;
 
@@ -45,6 +46,7 @@ public class MyKeyboardView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+
         float outerradius = outerpercent * getHeight()/2;
         float innerradius = innerpercent * outerradius;
         float buttonradius = buttonpercent * getHeight()/2;
@@ -52,10 +54,28 @@ public class MyKeyboardView extends View {
         float centery = getHeight() /2;
         float ex = event.getX();
         float ey = event.getY();
+        if(event.getPointerCount() > 1){
+            ex = event.getX(1);
+            ey = event.getY(1);
+        }
 
         int seg = getSegment(ex, ey, centerx, centery, outerradius, innerradius, buttonradius);
 
-        if(event.getAction() == MotionEvent.ACTION_UP){
+        if(event.getActionMasked() == MotionEvent.ACTION_POINTER_UP){
+            if(tentative != -1){
+                listener.onKey(charCode(start, tentative));
+                tentative = -1;
+            }
+            if(start == 0 && seg == 0){
+                // Center button
+                if(listener != null)
+                    listener.onKey(" ");
+            }
+            start = getSegment(event.getX(), event.getY(), centerx, centery, outerradius, innerradius, buttonradius);
+            this.highlighted = start;
+            this.invalidate();
+        }
+        else if(event.getAction() == MotionEvent.ACTION_UP){
             if(tentative != -1){
                 listener.onKey(charCode(start, tentative));
                 tentative = -1;
@@ -66,6 +86,9 @@ public class MyKeyboardView extends View {
                     listener.onKey(" ");
             }
             start = -1;
+            if(event.getPointerCount() > 1){
+                start = getSegment(event.getX(1), event.getY(1), centerx, centery, outerradius, innerradius, buttonradius);
+            }
             this.highlighted = start;
             this.invalidate();
         }
@@ -77,9 +100,13 @@ public class MyKeyboardView extends View {
             else if (seg != 0 && seg != -1) {
                 if (start != seg) {
                     // Second button touched
-
                     if (start == 0 && seg == 7) {
-                        listener.onBackspace();
+                        //System.out.println(lastBack);
+                        if(lastBack == -1 || event.getEventTime() - lastBack > backspacetime) {
+                            listener.onBackspace();
+                            lastBack = event.getEventTime();
+                        }
+                        return true;
                     }
                     else if(start == 0 && seg == 3) {
                         listener.onEnter();
@@ -138,6 +165,7 @@ public class MyKeyboardView extends View {
             this.highlighted = start;
             this.invalidate();
         }
+        lastBack = -1;
         return true;
     }
 
