@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">keybird</string>
-    <string name="input_label">keyboard</string>
+    <string name="app_name">keybrd</string>
+    <string name="input_label">Keybrd App</string>
 </resources>
