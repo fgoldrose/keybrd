@@ -52,12 +52,14 @@ public class MyKeyboardView extends View {
         float buttonradius = buttonpercent * getHeight()/2;
         float centerx = getWidth() /2;
         float centery = getHeight() /2;
-        float ex = event.getX();
-        float ey = event.getY();
-        if(event.getPointerCount() > 1){
-            ex = event.getX(1);
-            ey = event.getY(1);
+        int index = event.getActionIndex();
+        int oppindex = 0;
+        if(index == 0){
+            oppindex = 1;
         }
+        float ex = event.getX(index);
+        float ey = event.getY(index);
+
 
         int seg = getSegment(ex, ey, centerx, centery, outerradius, innerradius, buttonradius);
 
@@ -66,33 +68,21 @@ public class MyKeyboardView extends View {
                 listener.onKey(charCode(start, tentative));
                 tentative = -1;
             }
-            if(start == 0 && seg == 0){
-                // Center button
-                if(listener != null)
-                    listener.onKey(" ");
-            }
-            start = getSegment(event.getX(), event.getY(), centerx, centery, outerradius, innerradius, buttonradius);
-            this.highlighted = start;
-            this.invalidate();
+
+            start = getSegment(event.getX(oppindex), event.getY(oppindex), centerx, centery, outerradius, innerradius, buttonradius);
         }
-        else if(event.getAction() == MotionEvent.ACTION_UP){
+        else if(event.getActionMasked() == MotionEvent.ACTION_UP){
             if(tentative != -1){
                 listener.onKey(charCode(start, tentative));
                 tentative = -1;
             }
             if(start == 0 && seg == 0){
-                // Center button
-                if(listener != null)
-                    listener.onKey(" ");
+                listener.onKey(" ");
             }
             start = -1;
-            if(event.getPointerCount() > 1){
-                start = getSegment(event.getX(1), event.getY(1), centerx, centery, outerradius, innerradius, buttonradius);
-            }
-            this.highlighted = start;
-            this.invalidate();
         }
-        else {
+
+        else if(event.getPointerCount() == 1 || event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN){
             if (start == -1) {
                 // First button touched
                 start = seg;
@@ -101,12 +91,7 @@ public class MyKeyboardView extends View {
                 if (start != seg) {
                     // Second button touched
                     if (start == 0 && seg == 7) {
-                        //System.out.println(lastBack);
-                        if(lastBack == -1 || event.getEventTime() - lastBack > backspacetime) {
-                            listener.onBackspace();
-                            lastBack = event.getEventTime();
-                        }
-                        return true;
+                        listener.onBackspace();
                     }
                     else if(start == 0 && seg == 3) {
                         listener.onEnter();
@@ -152,8 +137,9 @@ public class MyKeyboardView extends View {
                         listener.onKey(charCode(start, seg));
                     }
                     start = seg;
+
                 }
-                else if(tentative != -1 && listener != null){
+                else if(tentative != -1){
                     // we have a tentative value and start==seg, so likely tentative was correct
                     listener.onKey(charCode(start,  tentative));
                     listener.onKey(charCode(tentative,  seg));
@@ -161,11 +147,9 @@ public class MyKeyboardView extends View {
                 }
 
             }
-
-            this.highlighted = start;
-            this.invalidate();
         }
-        lastBack = -1;
+        this.highlighted = start;
+        this.invalidate();
         return true;
     }
 

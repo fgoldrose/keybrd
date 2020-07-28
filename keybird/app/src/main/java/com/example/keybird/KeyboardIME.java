@@ -21,13 +21,13 @@ public class KeyboardIME extends InputMethodService implements MyKeyboardView.My
         getCurrentInputConnection().commitText(text, 1);
     }
     public void onBackspace(){
-        getCurrentInputConnection().deleteSurroundingText(1,0);
+        getCurrentInputConnection().sendKeyEvent(
+                new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
     }
 
     public void onEnter(){
 
-
-        int actionId = getCurrentInputEditorInfo().actionId;
+        int actionId = getCurrentInputEditorInfo().imeOptions & EditorInfo.IME_MASK_ACTION;
 
         switch (actionId) {
             case EditorInfo.IME_ACTION_SEARCH:
@@ -40,7 +40,8 @@ public class KeyboardIME extends InputMethodService implements MyKeyboardView.My
                 sendDefaultEditorAction(true);
                 break;
             default:
-                getCurrentInputConnection().sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
+                getCurrentInputConnection().sendKeyEvent(
+                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
         }
 
 
