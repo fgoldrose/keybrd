@@ -4,10 +4,12 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.graphics.Path;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -22,7 +24,7 @@ public class MyKeyboardView extends View {
 
     // size of
     float outerpercent = (float) 0.7;
-    float innerpercent = (float) 0.5;
+    float innerpercent = (float) 0.6;
     float buttonpercent = (float) 0.2;
 
     int highlighted = -1;
@@ -53,15 +55,12 @@ public class MyKeyboardView extends View {
         float centerx = getWidth() /2;
         float centery = getHeight() /2;
         int index = event.getActionIndex();
-        int oppindex = 0;
-        if(index == 0){
-            oppindex = 1;
-        }
+        int oppindex = index == 0 ? 1 : 0;
         float ex = event.getX(index);
         float ey = event.getY(index);
 
 
-        int seg = getSegment(ex, ey, centerx, centery, outerradius, innerradius, buttonradius);
+        int seg = getSegment(ex, ey, centerx, centery, outerradius, innerradius);
 
         if(event.getActionMasked() == MotionEvent.ACTION_POINTER_UP){
             if(tentative != -1){
@@ -69,7 +68,7 @@ public class MyKeyboardView extends View {
                 tentative = -1;
             }
 
-            start = getSegment(event.getX(oppindex), event.getY(oppindex), centerx, centery, outerradius, innerradius, buttonradius);
+            start = getSegment(event.getX(oppindex), event.getY(oppindex), centerx, centery, outerradius, innerradius);
         }
         else if(event.getActionMasked() == MotionEvent.ACTION_UP){
             if(tentative != -1){
@@ -104,7 +103,7 @@ public class MyKeyboardView extends View {
                         }
                     } else if (tentative != -1) {
                         if(tentative == seg){
-                            if(distance(centerx, centery, ex, ey) >= (outerradius + innerradius) * 2/3){
+                            if(distance(centerx, centery, ex, ey) >= (outerradius + innerradius) * 1/2){
                                 listener.onKey(charCode(start, seg));
                                 tentative = -1;
                             }
@@ -125,7 +124,7 @@ public class MyKeyboardView extends View {
                         tentative = -1;
                     } else {
                         if (start != 0 && Math.abs(start - seg) == 1
-                                && distance(centerx, centery, ex, ey) < (outerradius + innerradius) * 2/3) {
+                                && distance(centerx, centery, ex, ey) < (outerradius + innerradius) * 1/2) {
                             //Neighboring positions, and within area of ambiguity.
                             // Set tentative key value, but don't process until seeing if the
                             // next segment touched is the next over neighbor.
@@ -174,7 +173,8 @@ public class MyKeyboardView extends View {
                 this.cy = cy;
             }
 
-            void drawKey(){
+            public void drawKey(){
+
                 float rad = buttonradius;
                 if (position == 0){
                     rad = innerradius;
@@ -204,8 +204,39 @@ public class MyKeyboardView extends View {
                 }
 
             }
-        }
 
+            void drawSegment(){
+                if(position != 0) {
+                    RectF outer_rect = new RectF(centerx-outerradius, centery-outerradius, centerx+outerradius, centery+outerradius);
+                    RectF inner_rect = new RectF(centerx-innerradius, centery-innerradius, centerx+innerradius, centery+innerradius);
+
+                    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    paint.setStyle(Paint.Style.STROKE);
+
+                    Path path = new Path();
+                    path.arcTo(outer_rect, -45*position + (float) 112.5, 45);
+                    path.arcTo(inner_rect, -45*position + 45 + (float) 112.5, -45);
+                    path.close();
+                    canvas.drawPath(path, paint);
+                    if(highlighted == position) {
+                        Paint fill = new Paint();
+                        fill.setColor(Color.GRAY);
+                        canvas.drawPath(path, fill);
+                    }
+
+                    Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    textpaint.setColor(Color.BLACK);
+                    textpaint.setTextSize(60);
+                    textpaint.setTextAlign(Paint.Align.CENTER);
+                    float textHeight = textpaint.descent() - textpaint.ascent();
+                    float textOffset = (textHeight / 2) - textpaint.descent();
+
+                    canvas.drawText(charCode(highlighted, position), cx, cy + textOffset, textpaint);
+                }
+            }
+
+        }
+/*
         float textrad = outerradius;
         float angle = 1 / (float) Math.sqrt(2);
 
@@ -218,19 +249,72 @@ public class MyKeyboardView extends View {
         new Key(6,centerx - angle * textrad, centery - angle * textrad).drawKey();
         new Key(7,centerx - textrad, centery).drawKey();
         new Key(8,centerx - angle * textrad, centery + angle * textrad).drawKey();
+*/
+
+        float textrad = (outerradius + innerradius)/2;
+        float angle = 1 / (float) Math.sqrt(2);
+
+        //new Key(0, centerx, centery).drawSegment();
+        new Key(1, centerx, centery + textrad).drawSegment();
+        new Key(2,centerx + angle * textrad, centery + angle * textrad).drawSegment();
+        new Key(3,centerx + textrad, centery).drawSegment();
+        new Key(4,centerx + angle * textrad, centery - angle * textrad).drawSegment();
+        new Key(5,centerx, centery - textrad).drawSegment();
+        new Key(6,centerx - angle * textrad, centery - angle * textrad).drawSegment();
+        new Key(7,centerx - textrad, centery).drawSegment();
+        new Key(8,centerx - angle * textrad, centery + angle * textrad).drawSegment();
+/*
+        Paint segpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        segpaint.setStyle(Paint.Style.STROKE);
 
 
-        /*
-        Dictionary<Integer, Key> positions = new Hashtable<Integer, Key>();
-        positions.put(1, new Key(1, centerx, centery + textrad));
-        positions.put(2, new Key(2,centerx + angle * textrad, centery + angle * textrad));
-        positions.put(3, new Key(3,centerx + textrad, centery));
-        positions.put(4, new Key(4,centerx + angle * textrad, centery - angle * textrad));
-        positions.put(5, new Key(5,centerx, centery - textrad));
-        positions.put(6, new Key(6,centerx - angle * textrad, centery - angle * textrad));
-        positions.put(7, new Key(7,centerx - textrad, centery));
-        positions.put(8, new Key(8,centerx - angle * textrad, centery + angle * textrad));
-        */
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setStyle(Paint.Style.STROKE);
+        //paint.setColor(Color.GRAY);
+        RectF kb = new RectF();
+        kb.left = centerx - outerradius;
+        kb.right = centerx + outerradius;
+        kb.top = centery - outerradius;
+        kb.bottom = centery + outerradius;
+
+        //segpaint.setColor(Color.LTGRAY);
+        Paint centpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        //centpaint.setColor(Color.WHITE);
+        centpaint.setStyle(Paint.Style.STROKE);
+        Paint hlpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        hlpaint.setColor(Color.GRAY);
+
+        canvas.drawCircle(centerx, centery, outerradius, paint);
+        canvas.drawArc(kb, 22.5F, 45F, true, segpaint);
+        canvas.drawArc(kb, 112.5F, 45F, true, segpaint);
+        canvas.drawArc(kb, 202.5F, 45F, true, segpaint);
+        canvas.drawArc(kb, 292.5F, 45F, true, segpaint);
+        if (highlighted >0) {
+            float startangle = (float) 112.5 - 45 * highlighted;
+            canvas.drawArc(kb, startangle, 45F, true, hlpaint);
+        }
+        if(highlighted == 0){
+            canvas.drawCircle(centerx, centery, innerradius, hlpaint);
+        }
+        else{
+            canvas.drawCircle(centerx, centery, innerradius, centpaint);
+        }
+        Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textpaint.setColor(Color.BLACK);
+        textpaint.setTextSize(60);
+        float textrad = (innerradius + outerradius) / 2;
+        float angle = 1 / (float) Math.sqrt(2);
+        canvas.drawText(charCode(highlighted, 1), centerx, centery + textrad, textpaint);
+        canvas.drawText(charCode(highlighted, 2), centerx + angle * textrad, centery + angle * textrad, textpaint);
+        canvas.drawText(charCode(highlighted, 3), centerx + textrad, centery, textpaint);
+        canvas.drawText(charCode(highlighted, 4), centerx + angle * textrad, centery - angle * textrad, textpaint);
+        canvas.drawText(charCode(highlighted, 5), centerx, centery - textrad, textpaint);
+        canvas.drawText(charCode(highlighted, 6), centerx - angle * textrad, centery - angle * textrad, textpaint);
+        canvas.drawText(charCode(highlighted, 7), centerx - textrad, centery, textpaint);
+        canvas.drawText(charCode(highlighted, 8), centerx - angle * textrad, centery + angle * textrad, textpaint);
+
+*/
     }
 
     public String charCode(int from, int to) {
@@ -388,6 +472,7 @@ public class MyKeyboardView extends View {
         return Math.sqrt(Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2));
     }
 
+    /*
     private int getSegment(double xtouch, double ytouch, double centerx, double centery, double outerrad, double innerrad, double buttonrad) {
         double textrad = outerrad;
         double angle = 1 / (float) Math.sqrt(2);
@@ -428,6 +513,44 @@ public class MyKeyboardView extends View {
             return 8;
         } else {
             return -1;
+        }
+    }
+    */
+
+    private int getSegment(double xtouch, double ytouch, double xcenter, double ycenter, double outerrad, double innerrad) {
+        double dist = distance(xtouch, ytouch, xcenter, ycenter);
+        if (dist < innerrad) {
+            return 0; // inside inner radius of circle
+        } else if (dist <= outerrad){
+            double y = ytouch - ycenter;
+            double x = xtouch - xcenter;
+            double pf = (Math.sqrt(2) - 1) * x; //positive flat
+            double ps = (Math.sqrt(2) + 1) * x; //positive steep
+            double nf = -pf; //negative flat
+            double ns = -ps; //negative steep
+            if (y >= ps && y >= ns) {
+                return 1;
+            } else if (y >= pf && y <= ps) {
+                return 2;
+            } else if (y >= nf && y <= pf) {
+                return 3;
+            } else if (y >= ns && y <= nf) {
+                return 4;
+            } else if (y <= ns && y <= ps) {
+                return 5;
+            } else if (y >= ps && y <= pf) {
+                return 6;
+            } else if (y >= pf && y <= nf) {
+                return 7;
+            } else if (y >= nf && y <= ns) {
+                return 8;
+            }
+            else {
+                return -2; // should never return
+            }
+        }
+        else {
+            return -1; //outside outer radius of circle
         }
     }
 }
