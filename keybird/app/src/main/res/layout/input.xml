@@ -12,7 +12,7 @@
     android:layout_gravity="bottom"
     android:layout_alignParentBottom="true"
     android:layout_centerInParent="true"
-    android:background="@color/colorPrimary"
+    android:background="@android:color/transparent"
 >
 
 </com.example.keybird.MyKeyboardView>

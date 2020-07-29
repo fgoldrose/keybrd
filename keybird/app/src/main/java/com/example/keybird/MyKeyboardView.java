@@ -162,10 +162,13 @@ public class MyKeyboardView extends View {
         final float centerx = getWidth() /2;
         final float centery = getHeight() /2;
 
+
+
         class Key {
             int position;
             float cx;
             float cy;
+            
 
             Key(int p, float cx, float cy){
                 this.position = p;
@@ -206,23 +209,43 @@ public class MyKeyboardView extends View {
             }
 
             void drawSegment(){
+                if(position == 0){
+                    Paint paint = new Paint();
+
+                    if(highlighted == position) {
+                        paint.setColor(Color.GRAY);
+                    }
+                    else{
+                        paint.setColor(Color.WHITE);
+                    }
+                    canvas.drawCircle(cx, cy, innerradius, paint);
+                }
                 if(position != 0) {
                     RectF outer_rect = new RectF(centerx-outerradius, centery-outerradius, centerx+outerradius, centery+outerradius);
                     RectF inner_rect = new RectF(centerx-innerradius, centery-innerradius, centerx+innerradius, centery+innerradius);
 
                     Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
                     paint.setStyle(Paint.Style.STROKE);
+                    paint.setStrokeWidth(3);
 
                     Path path = new Path();
                     path.arcTo(outer_rect, -45*position + (float) 112.5, 45);
                     path.arcTo(inner_rect, -45*position + 45 + (float) 112.5, -45);
                     path.close();
-                    canvas.drawPath(path, paint);
+
+                    Paint fill = new Paint();
                     if(highlighted == position) {
-                        Paint fill = new Paint();
+
                         fill.setColor(Color.GRAY);
-                        canvas.drawPath(path, fill);
+
                     }
+                    else{
+                        fill.setColor(Color.WHITE);
+                    }
+                    canvas.drawPath(path, fill);
+
+                    canvas.drawPath(path, paint);
+
 
                     Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
                     textpaint.setColor(Color.BLACK);
@@ -236,9 +259,10 @@ public class MyKeyboardView extends View {
             }
 
         }
-/*
-        float textrad = outerradius;
+        float textrad = (outerradius + innerradius)/2;
         float angle = 1 / (float) Math.sqrt(2);
+/*
+
 
         new Key(0, centerx, centery).drawKey();
         new Key(1, centerx, centery + textrad).drawKey();
@@ -251,10 +275,9 @@ public class MyKeyboardView extends View {
         new Key(8,centerx - angle * textrad, centery + angle * textrad).drawKey();
 */
 
-        float textrad = (outerradius + innerradius)/2;
-        float angle = 1 / (float) Math.sqrt(2);
 
-        //new Key(0, centerx, centery).drawSegment();
+
+        new Key(0, centerx, centery).drawSegment();
         new Key(1, centerx, centery + textrad).drawSegment();
         new Key(2,centerx + angle * textrad, centery + angle * textrad).drawSegment();
         new Key(3,centerx + textrad, centery).drawSegment();
@@ -263,58 +286,7 @@ public class MyKeyboardView extends View {
         new Key(6,centerx - angle * textrad, centery - angle * textrad).drawSegment();
         new Key(7,centerx - textrad, centery).drawSegment();
         new Key(8,centerx - angle * textrad, centery + angle * textrad).drawSegment();
-/*
-        Paint segpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        segpaint.setStyle(Paint.Style.STROKE);
 
-
-
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setStyle(Paint.Style.STROKE);
-        //paint.setColor(Color.GRAY);
-        RectF kb = new RectF();
-        kb.left = centerx - outerradius;
-        kb.right = centerx + outerradius;
-        kb.top = centery - outerradius;
-        kb.bottom = centery + outerradius;
-
-        //segpaint.setColor(Color.LTGRAY);
-        Paint centpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        //centpaint.setColor(Color.WHITE);
-        centpaint.setStyle(Paint.Style.STROKE);
-        Paint hlpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        hlpaint.setColor(Color.GRAY);
-
-        canvas.drawCircle(centerx, centery, outerradius, paint);
-        canvas.drawArc(kb, 22.5F, 45F, true, segpaint);
-        canvas.drawArc(kb, 112.5F, 45F, true, segpaint);
-        canvas.drawArc(kb, 202.5F, 45F, true, segpaint);
-        canvas.drawArc(kb, 292.5F, 45F, true, segpaint);
-        if (highlighted >0) {
-            float startangle = (float) 112.5 - 45 * highlighted;
-            canvas.drawArc(kb, startangle, 45F, true, hlpaint);
-        }
-        if(highlighted == 0){
-            canvas.drawCircle(centerx, centery, innerradius, hlpaint);
-        }
-        else{
-            canvas.drawCircle(centerx, centery, innerradius, centpaint);
-        }
-        Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textpaint.setColor(Color.BLACK);
-        textpaint.setTextSize(60);
-        float textrad = (innerradius + outerradius) / 2;
-        float angle = 1 / (float) Math.sqrt(2);
-        canvas.drawText(charCode(highlighted, 1), centerx, centery + textrad, textpaint);
-        canvas.drawText(charCode(highlighted, 2), centerx + angle * textrad, centery + angle * textrad, textpaint);
-        canvas.drawText(charCode(highlighted, 3), centerx + textrad, centery, textpaint);
-        canvas.drawText(charCode(highlighted, 4), centerx + angle * textrad, centery - angle * textrad, textpaint);
-        canvas.drawText(charCode(highlighted, 5), centerx, centery - textrad, textpaint);
-        canvas.drawText(charCode(highlighted, 6), centerx - angle * textrad, centery - angle * textrad, textpaint);
-        canvas.drawText(charCode(highlighted, 7), centerx - textrad, centery, textpaint);
-        canvas.drawText(charCode(highlighted, 8), centerx - angle * textrad, centery + angle * textrad, textpaint);
-
-*/
     }
 
     public String charCode(int from, int to) {
