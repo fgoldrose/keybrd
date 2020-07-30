@@ -10,6 +10,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.graphics.Path;
+import com.example.keybird.Keyboard.Key;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -27,17 +28,16 @@ public class MyKeyboardView extends View {
     float innerpercent = (float) 0.6;
     float buttonpercent = (float) 0.2;
 
-    int highlighted = -1;
-    int mode = 0;
-    private int start = -1;
-    private int tentative = -1;
-    double backspacetime = 200;
-    long lastBack = -1;
+
+    private Key start;
+
+    private Keyboard keyboard;
 
     private MyListener listener = null;
 
     public interface MyListener {
-        void onKey(String text);
+        //void onCode(int code);
+        void onText(String text);
         void onBackspace();
         void onEnter();
     }
@@ -46,21 +46,119 @@ public class MyKeyboardView extends View {
         this.listener = listener;
     }
 
+    public void setKeyboard(Keyboard k){
+        this.keyboard = k;
+    }
+
+    private double distance(double x1, double y1, double x2, double y2){
+        return Math.sqrt(Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2));
+    }
+
+    private Keyboard.Key getKey(float ex, float ey, float centerx, float centery, float outerradius, float innerradius){
+        int position = getSegment(ex, ey, centerx, centery, outerradius, innerradius);
+        if(position != -1){
+            return this.keyboard.getKey(position);
+        }
+        else{
+            return null;
+        }
+    }
+
+    private void handleAction(Keyboard.Action a){
+        if (a == null){
+            return;
+        }
+
+        switch(a.action){
+            case Keyboard.DELETE:
+                listener.onBackspace();
+                break;
+            case Keyboard.ENTER:
+                listener.onEnter();
+                break;
+            case Keyboard.INPUT:
+                if (a.text != null) {
+                    listener.onText(a.text);
+                }
+                else {
+                    //listener.onCode(a.arg);
+                }
+                break;
+            case Keyboard.MODE_CHANGE:
+                keyboard.mode = a.arg;
+                break;
+            default:
+                ;
+        }
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        float outerradius = outerpercent * getHeight()/2;
+        float outerradius = outerpercent * getHeight() / 2;
         float innerradius = innerpercent * outerradius;
-        float buttonradius = buttonpercent * getHeight()/2;
-        float centerx = getWidth() /2;
-        float centery = getHeight() /2;
+        float buttonradius = buttonpercent * getHeight() / 2;
+        float centerx = getWidth() / 2;
+        float centery = getHeight() / 2;
         int index = event.getActionIndex();
         int oppindex = index == 0 ? 1 : 0;
         float ex = event.getX(index);
         float ey = event.getY(index);
 
+        Keyboard.Action a;
+        Keyboard.Key k = getKey(ex, ey, centerx, centery, outerradius, innerradius);
 
-        int seg = getSegment(ex, ey, centerx, centery, outerradius, innerradius);
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_POINTER_UP:
+                // second finger leaves, start goes to where other finger is
+                start = getKey(event.getX(oppindex), event.getY(oppindex), centerx, centery, outerradius, innerradius);
+                break;
+            case MotionEvent.ACTION_UP:
+                if (start != null && start == k && start.clickaction != null) {
+                    handleAction(start.clickaction);
+                }
+                start = null;
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                //second finger added
+                a = keyboard.getAction(start, k);
+                if (a != null) {
+                    handleAction(a);
+                }
+                start = k;
+                break;
+            case MotionEvent.ACTION_DOWN:
+                // one finger down
+                start = k;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                // one finger move.
+                if (event.getPointerCount() > 1) {
+                    return true;
+                }
+
+                if (start == null) {
+                    start = k;
+                } else if(k != null && k.position != 0) {
+                    a = keyboard.getAction(start, k);
+                    if (a != null) {
+                        handleAction(a);
+                    }
+                    start = k;
+                }
+                break;
+            default:
+                return false;
+
+
+        }
+
+        keyboard.setCurkey(start);
+        this.invalidate();
+        return true;
+    }
+
+        /*
 
         if(event.getActionMasked() == MotionEvent.ACTION_POINTER_UP){
             if(tentative != -1){
@@ -151,118 +249,65 @@ public class MyKeyboardView extends View {
         this.invalidate();
         return true;
     }
+    */
 
     @Override
     public void onDraw(final Canvas canvas) {
         super.onDraw(canvas);
 
-        final float outerradius = outerpercent * getHeight()/2;
+        final float outerradius = outerpercent * getHeight() / 2;
         final float innerradius = innerpercent * outerradius;
-        final float buttonradius = buttonpercent * getHeight()/2;
-        final float centerx = getWidth() /2;
-        final float centery = getHeight() /2;
+        final float buttonradius = buttonpercent * getHeight() / 2;
+        final float centerx = getWidth() / 2;
+        final float centery = getHeight() / 2;
 
+        for (int i = 0; i < 9; i++) {
+            Key k = keyboard.getKey(i);
+            float cx = centerx + k.xoffset * (outerradius + innerradius) / 2;
+            float cy = centery + k.yoffset * (outerradius + innerradius) / 2;
 
-
-        class Key {
-            int position;
-            float cx;
-            float cy;
-            
-
-            Key(int p, float cx, float cy){
-                this.position = p;
-                this.cx = cx;
-                this.cy = cy;
+            Paint paint = new Paint();
+            if (keyboard.curkey == k) {
+                paint.setColor(Color.GRAY);
+            } else {
+                paint.setColor(Color.WHITE);
             }
 
-            public void drawKey(){
+            if (k.position == 0) {
+                canvas.drawCircle(cx, cy, innerradius, paint);
+            } else {
+                RectF outer_rect = new RectF(centerx - outerradius, centery - outerradius, centerx + outerradius, centery + outerradius);
+                RectF inner_rect = new RectF(centerx - innerradius, centery - innerradius, centerx + innerradius, centery + innerradius);
 
-                float rad = buttonradius;
-                if (position == 0){
-                    rad = innerradius;
-                }
-                Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                paint.setStyle(Paint.Style.STROKE);
+                Paint outlinepaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                outlinepaint.setStyle(Paint.Style.STROKE);
+                outlinepaint.setStrokeWidth(3);
 
-                canvas.drawCircle(cx, cy, rad, paint);
+                Path path = new Path();
+                path.arcTo(outer_rect, -45 * k.position + (float) 112.5, 45);
+                path.arcTo(inner_rect, -45 * k.position + 45 + (float) 112.5, -45);
+                path.close();
 
-                if(highlighted == position) {
-                    Paint hlpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    hlpaint.setStyle(Paint.Style.STROKE);
 
-                    canvas.drawCircle(cx, cy, rad + 10, hlpaint);
-                }
+                canvas.drawPath(path, paint);
+                canvas.drawPath(path, outlinepaint);
 
-                if(position != 0) {
 
-                    Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    textpaint.setColor(Color.BLACK);
-                    textpaint.setTextSize(60);
-                    textpaint.setTextAlign(Paint.Align.CENTER);
-                    float textHeight = textpaint.descent() - textpaint.ascent();
-                    float textOffset = (textHeight / 2) - textpaint.descent();
+                Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                textpaint.setColor(Color.BLACK);
+                textpaint.setTextSize(60);
+                textpaint.setTextAlign(Paint.Align.CENTER);
+                float textHeight = textpaint.descent() - textpaint.ascent();
+                float textOffset = (textHeight / 2) - textpaint.descent();
 
-                    canvas.drawText(charCode(highlighted, position), cx, cy + textOffset, textpaint);
-                }
-
+                canvas.drawText(k.label, cx, cy + textOffset, textpaint);
             }
-
-            void drawSegment(){
-                if(position == 0){
-                    Paint paint = new Paint();
-
-                    if(highlighted == position) {
-                        paint.setColor(Color.GRAY);
-                    }
-                    else{
-                        paint.setColor(Color.WHITE);
-                    }
-                    canvas.drawCircle(cx, cy, innerradius, paint);
-                }
-                if(position != 0) {
-                    RectF outer_rect = new RectF(centerx-outerradius, centery-outerradius, centerx+outerradius, centery+outerradius);
-                    RectF inner_rect = new RectF(centerx-innerradius, centery-innerradius, centerx+innerradius, centery+innerradius);
-
-                    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    paint.setStyle(Paint.Style.STROKE);
-                    paint.setStrokeWidth(3);
-
-                    Path path = new Path();
-                    path.arcTo(outer_rect, -45*position + (float) 112.5, 45);
-                    path.arcTo(inner_rect, -45*position + 45 + (float) 112.5, -45);
-                    path.close();
-
-                    Paint fill = new Paint();
-                    if(highlighted == position) {
-
-                        fill.setColor(Color.GRAY);
-
-                    }
-                    else{
-                        fill.setColor(Color.WHITE);
-                    }
-                    canvas.drawPath(path, fill);
-
-                    canvas.drawPath(path, paint);
-
-
-                    Paint textpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    textpaint.setColor(Color.BLACK);
-                    textpaint.setTextSize(60);
-                    textpaint.setTextAlign(Paint.Align.CENTER);
-                    float textHeight = textpaint.descent() - textpaint.ascent();
-                    float textOffset = (textHeight / 2) - textpaint.descent();
-
-                    canvas.drawText(charCode(highlighted, position), cx, cy + textOffset, textpaint);
-                }
-            }
-
         }
-        float textrad = (outerradius + innerradius)/2;
-        float angle = 1 / (float) Math.sqrt(2);
+    }
 /*
 
+        float textrad = (outerradius + innerradius)/2;
+        float angle = 1 / (float) Math.sqrt(2);
 
         new Key(0, centerx, centery).drawKey();
         new Key(1, centerx, centery + textrad).drawKey();
@@ -273,7 +318,6 @@ public class MyKeyboardView extends View {
         new Key(6,centerx - angle * textrad, centery - angle * textrad).drawKey();
         new Key(7,centerx - textrad, centery).drawKey();
         new Key(8,centerx - angle * textrad, centery + angle * textrad).drawKey();
-*/
 
 
 
@@ -287,161 +331,44 @@ public class MyKeyboardView extends View {
         new Key(7,centerx - textrad, centery).drawSegment();
         new Key(8,centerx - angle * textrad, centery + angle * textrad).drawSegment();
 
-    }
 
-    public String charCode(int from, int to) {
-        int code;
-        if (from < to) {
-            code = mode * 100 + from * 10 + to;
-        } else {
-            code = mode * 100 + to * 10 + from;
+    }*/
+
+    private int getSegment(double xtouch, double ytouch, double xcenter, double ycenter, double outerrad, double innerrad) {
+        double dist = distance(xtouch, ytouch, xcenter, ycenter);
+        if (dist < innerrad) {
+            return 0; // inside inner radius of circle
+        } else if (dist <= outerrad){
+            double y = ytouch - ycenter;
+            double x = xtouch - xcenter;
+            double pf = (Math.sqrt(2) - 1) * x; //positive flat
+            double ps = (Math.sqrt(2) + 1) * x; //positive steep
+            double nf = -pf; //negative flat
+            double ns = -ps; //negative steep
+            if (y >= ps && y >= ns) {
+                return 1;
+            } else if (y >= pf && y <= ps) {
+                return 2;
+            } else if (y >= nf && y <= pf) {
+                return 3;
+            } else if (y >= ns && y <= nf) {
+                return 4;
+            } else if (y <= ns && y <= ps) {
+                return 5;
+            } else if (y >= ps && y <= pf) {
+                return 6;
+            } else if (y >= pf && y <= nf) {
+                return 7;
+            } else if (y >= nf && y <= ns) {
+                return 8;
+            }
+            else {
+                return -2; // should never return
+            }
         }
-        switch(code){
-            case 0:
-                return " ";
-            case 1:
-                return ".";
-            case 2:
-                return "?";
-            case 3:
-                return "Enter";
-            case 5:
-                return "CAPS";
-            case 6:
-                return "!";
-            case 7:
-                return "<--";
-            case 8:
-                return ",";
-            case 101:
-                return ".";
-            case 102:
-                return "?";
-            case 103:
-                return "Enter";
-            case 105:
-                return "lower";
-            case 106:
-                return "!";
-            case 107:
-                return "<--";
-            case 108:
-                return ",";
-
-            case 13:
-                return "y";
-            case 24:
-                return "w";
-            case 34:
-                return "q";
-            case 16:
-                return "r";
-            case 28:
-                return "z";
-            case 46:
-                return "d";
-            case 57:
-                return "s";
-            case 12:
-                return "a";
-            case 78:
-                return "k";
-            case 35:
-                return "u";
-            case 15:
-                return "o";
-            case 47:
-                return "v";
-            case 18:
-                return "p";
-            case 68:
-                return "x";
-            case 36:
-                return "l";
-            case 56:
-                return "i";
-            case 27:
-                return "h";
-            case 17:
-                return "c";
-            case 25:
-                return "t";
-            case 14:
-                return "j";
-            case 58:
-                return "m";
-            case 26:
-                return "n";
-            case 37:
-                return "b";
-            case 23:
-                return "g";
-            case 67:
-                return "e";
-            case 45:
-                return "f";
-            //CAPS
-            case 113:
-                return "Y";
-            case 124:
-                return "W";
-            case 134:
-                return "Q";
-            case 116:
-                return "R";
-            case 128:
-                return "Z";
-            case 146:
-                return "D";
-            case 157:
-                return "S";
-            case 112:
-                return "A";
-            case 178:
-                return "K";
-            case 135:
-                return "U";
-            case 115:
-                return "O";
-            case 147:
-                return "V";
-            case 118:
-                return "P";
-            case 168:
-                return "X";
-            case 136:
-                return "L";
-            case 156:
-                return "I";
-            case 127:
-                return "H";
-            case 117:
-                return "C";
-            case 125:
-                return "T";
-            case 114:
-                return "J";
-            case 158:
-                return "M";
-            case 126:
-                return "N";
-            case 137:
-                return "B";
-            case 123:
-                return "G";
-            case 167:
-                return "E";
-            case 145:
-                return "F";
-
-            default:
-                return "";
+        else {
+            return -1; //outside outer radius of circle
         }
-    }
-
-
-    private double distance(double x1, double y1, double x2, double y2){
-        return Math.sqrt(Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2));
     }
 
     /*
@@ -489,41 +416,5 @@ public class MyKeyboardView extends View {
     }
     */
 
-    private int getSegment(double xtouch, double ytouch, double xcenter, double ycenter, double outerrad, double innerrad) {
-        double dist = distance(xtouch, ytouch, xcenter, ycenter);
-        if (dist < innerrad) {
-            return 0; // inside inner radius of circle
-        } else if (dist <= outerrad){
-            double y = ytouch - ycenter;
-            double x = xtouch - xcenter;
-            double pf = (Math.sqrt(2) - 1) * x; //positive flat
-            double ps = (Math.sqrt(2) + 1) * x; //positive steep
-            double nf = -pf; //negative flat
-            double ns = -ps; //negative steep
-            if (y >= ps && y >= ns) {
-                return 1;
-            } else if (y >= pf && y <= ps) {
-                return 2;
-            } else if (y >= nf && y <= pf) {
-                return 3;
-            } else if (y >= ns && y <= nf) {
-                return 4;
-            } else if (y <= ns && y <= ps) {
-                return 5;
-            } else if (y >= ps && y <= pf) {
-                return 6;
-            } else if (y >= pf && y <= nf) {
-                return 7;
-            } else if (y >= nf && y <= ns) {
-                return 8;
-            }
-            else {
-                return -2; // should never return
-            }
-        }
-        else {
-            return -1; //outside outer radius of circle
-        }
-    }
 }
 

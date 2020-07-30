@@ -11,13 +11,17 @@ public class KeyboardIME extends InputMethodService implements MyKeyboardView.My
 
     @Override
     public View onCreateInputView(){
+        Keyboard keyboard = new Keyboard();
+        keyboard.setupDefault();
+
         View layout = getLayoutInflater().inflate(R.layout.input, null);
-        MyKeyboardView kb = layout.findViewById(R.id.kbv);
-        kb.setListener(this);
+        MyKeyboardView kbv = layout.findViewById(R.id.kbv);
+        kbv.setListener(this);
+        kbv.setKeyboard(keyboard);
         return layout;
     }
 
-    public void onKey(String text){
+    public void onText(String text){
         getCurrentInputConnection().commitText(text, 1);
     }
     public void onBackspace(){
