@@ -12,8 +12,6 @@ import android.view.View;
 import android.graphics.Path;
 import com.example.keybird.Keyboard.Key;
 
-import java.util.Dictionary;
-import java.util.Hashtable;
 
 public class MyKeyboardView extends View {
     public MyKeyboardView(Context context, @Nullable AttributeSet attrs){
@@ -26,7 +24,6 @@ public class MyKeyboardView extends View {
     // size of
     float outerpercent = (float) 0.7;
     float innerpercent = (float) 0.6;
-    float buttonpercent = (float) 0.2;
 
 
     private Key start;
@@ -78,7 +75,15 @@ public class MyKeyboardView extends View {
                 break;
             case Keyboard.INPUT:
                 if (a.text != null) {
-                    listener.onText(a.text);
+                    if(keyboard.mode == Keyboard.SHIFTED) {
+                        listener.onText(a.text.toUpperCase());
+                        if(!keyboard.capslock){
+                            keyboard.mode = Keyboard.NORMAL;
+                        }
+                    }
+                    else{
+                        listener.onText(a.text);
+                    }
                 }
                 else {
                     //listener.onCode(a.arg);
@@ -86,6 +91,16 @@ public class MyKeyboardView extends View {
                 break;
             case Keyboard.MODE_CHANGE:
                 keyboard.mode = a.arg;
+                break;
+            case Keyboard.CAPSLOCK:
+                if(keyboard.capslock){
+                    keyboard.capslock = false;
+                    keyboard.mode = Keyboard.NORMAL;
+                }
+                else{
+                    keyboard.mode = Keyboard.SHIFTED; // Should already be true
+                    keyboard.capslock = true;
+                }
                 break;
             default:
                 ;
@@ -97,7 +112,6 @@ public class MyKeyboardView extends View {
 
         float outerradius = outerpercent * getHeight() / 2;
         float innerradius = innerpercent * outerradius;
-        float buttonradius = buttonpercent * getHeight() / 2;
         float centerx = getWidth() / 2;
         float centery = getHeight() / 2;
         int index = event.getActionIndex();
@@ -114,8 +128,14 @@ public class MyKeyboardView extends View {
                 start = getKey(event.getX(oppindex), event.getY(oppindex), centerx, centery, outerradius, innerradius);
                 break;
             case MotionEvent.ACTION_UP:
+                // last finger up
                 if (start != null && start == k && start.clickaction != null) {
                     handleAction(start.clickaction);
+                }
+                else if(start != null && k != null && start.position != 0 && k.position != 0 && Math.abs(start.position - k.position) == 1
+                    && distance(centerx, centery, ex, ey) < (outerradius + innerradius) * 1/2){
+                    // would normally not count because neighbors but should if we lift finger on it
+                    handleAction(keyboard.getAction(start, k));
                 }
                 start = null;
                 break;
@@ -140,6 +160,11 @@ public class MyKeyboardView extends View {
                 if (start == null) {
                     start = k;
                 } else if(k != null && k.position != 0) {
+                    if (start.position != 0 && k.position != 0 && Math.abs(start.position - k.position) == 1
+                            && distance(centerx, centery, ex, ey) < (outerradius + innerradius) * 1/2) {
+                        //dont count inner half of key on neighboring keys.
+                        return true;
+                    }
                     a = keyboard.getAction(start, k);
                     if (a != null) {
                         handleAction(a);
@@ -150,7 +175,6 @@ public class MyKeyboardView extends View {
             default:
                 return false;
 
-
         }
 
         keyboard.setCurkey(start);
@@ -158,106 +182,12 @@ public class MyKeyboardView extends View {
         return true;
     }
 
-        /*
-
-        if(event.getActionMasked() == MotionEvent.ACTION_POINTER_UP){
-            if(tentative != -1){
-                listener.onKey(charCode(start, tentative));
-                tentative = -1;
-            }
-
-            start = getSegment(event.getX(oppindex), event.getY(oppindex), centerx, centery, outerradius, innerradius);
-        }
-        else if(event.getActionMasked() == MotionEvent.ACTION_UP){
-            if(tentative != -1){
-                listener.onKey(charCode(start, tentative));
-                tentative = -1;
-            }
-            if(start == 0 && seg == 0){
-                listener.onKey(" ");
-            }
-            start = -1;
-        }
-
-        else if(event.getPointerCount() == 1 || event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN){
-            if (start == -1) {
-                // First button touched
-                start = seg;
-            }
-            else if (seg != 0 && seg != -1) {
-                if (start != seg) {
-                    // Second button touched
-                    if (start == 0 && seg == 7) {
-                        listener.onBackspace();
-                    }
-                    else if(start == 0 && seg == 3) {
-                        listener.onEnter();
-                    }
-                    else if (start == 0 && seg == 5) {
-                        if (mode == 0) {
-                            mode = 1;
-                        } else if (mode == 1) {
-                            mode = 0;
-                        }
-                    } else if (tentative != -1) {
-                        if(tentative == seg){
-                            if(distance(centerx, centery, ex, ey) >= (outerradius + innerradius) * 1/2){
-                                listener.onKey(charCode(start, seg));
-                                tentative = -1;
-                            }
-                            else {
-                                return true;
-                            }
-                        }
-                        // process existing tentative value
-                        if (Math.abs(tentative - seg) == 1) {
-                            // likely tentative value was wrong
-                            listener.onKey(charCode(start, seg));
-                        }
-                        else {
-                            // tentative was probably correct, both actions should be processed
-                            listener.onKey(charCode(start,  tentative));
-                            listener.onKey(charCode(tentative,  seg));
-                        }
-                        tentative = -1;
-                    } else {
-                        if (start != 0 && Math.abs(start - seg) == 1
-                                && distance(centerx, centery, ex, ey) < (outerradius + innerradius) * 1/2) {
-                            //Neighboring positions, and within area of ambiguity.
-                            // Set tentative key value, but don't process until seeing if the
-                            // next segment touched is the next over neighbor.
-                            tentative = seg;
-                            //System.out.println("TENTATIVE");
-                            return true;
-                        }
-
-                        listener.onKey(charCode(start, seg));
-                    }
-                    start = seg;
-
-                }
-                else if(tentative != -1){
-                    // we have a tentative value and start==seg, so likely tentative was correct
-                    listener.onKey(charCode(start,  tentative));
-                    listener.onKey(charCode(tentative,  seg));
-                    tentative = -1;
-                }
-
-            }
-        }
-        this.highlighted = start;
-        this.invalidate();
-        return true;
-    }
-    */
-
     @Override
     public void onDraw(final Canvas canvas) {
         super.onDraw(canvas);
 
         final float outerradius = outerpercent * getHeight() / 2;
         final float innerradius = innerpercent * outerradius;
-        final float buttonradius = buttonpercent * getHeight() / 2;
         final float centerx = getWidth() / 2;
         final float centery = getHeight() / 2;
 
@@ -304,35 +234,6 @@ public class MyKeyboardView extends View {
             }
         }
     }
-/*
-
-        float textrad = (outerradius + innerradius)/2;
-        float angle = 1 / (float) Math.sqrt(2);
-
-        new Key(0, centerx, centery).drawKey();
-        new Key(1, centerx, centery + textrad).drawKey();
-        new Key(2,centerx + angle * textrad, centery + angle * textrad).drawKey();
-        new Key(3,centerx + textrad, centery).drawKey();
-        new Key(4,centerx + angle * textrad, centery - angle * textrad).drawKey();
-        new Key(5,centerx, centery - textrad).drawKey();
-        new Key(6,centerx - angle * textrad, centery - angle * textrad).drawKey();
-        new Key(7,centerx - textrad, centery).drawKey();
-        new Key(8,centerx - angle * textrad, centery + angle * textrad).drawKey();
-
-
-
-        new Key(0, centerx, centery).drawSegment();
-        new Key(1, centerx, centery + textrad).drawSegment();
-        new Key(2,centerx + angle * textrad, centery + angle * textrad).drawSegment();
-        new Key(3,centerx + textrad, centery).drawSegment();
-        new Key(4,centerx + angle * textrad, centery - angle * textrad).drawSegment();
-        new Key(5,centerx, centery - textrad).drawSegment();
-        new Key(6,centerx - angle * textrad, centery - angle * textrad).drawSegment();
-        new Key(7,centerx - textrad, centery).drawSegment();
-        new Key(8,centerx - angle * textrad, centery + angle * textrad).drawSegment();
-
-
-    }*/
 
     private int getSegment(double xtouch, double ytouch, double xcenter, double ycenter, double outerrad, double innerrad) {
         double dist = distance(xtouch, ytouch, xcenter, ycenter);
@@ -370,51 +271,6 @@ public class MyKeyboardView extends View {
             return -1; //outside outer radius of circle
         }
     }
-
-    /*
-    private int getSegment(double xtouch, double ytouch, double centerx, double centery, double outerrad, double innerrad, double buttonrad) {
-        double textrad = outerrad;
-        double angle = 1 / (float) Math.sqrt(2);
-        double x1 = centerx;
-        double y1 = centery + textrad;
-        double x2 = centerx + angle * textrad;
-        double y2 = centery + angle * textrad;
-        double x3 = centerx + textrad;
-        double y3 = centery;
-        double x4 = centerx + angle * textrad;
-        double y4 = centery - angle * textrad;
-        double x5 = centerx;
-        double y5 = centery - textrad;
-        double x6 = centerx - angle * textrad;
-        double y6 = centery - angle * textrad;
-        double x7 = centerx - textrad;
-        double y7 = centery;
-        double x8 = centerx - angle * textrad;
-        double y8 = centery + angle * textrad;
-        double cdist = distance(xtouch, ytouch, centerx, centery);
-        if (cdist < innerrad) {
-            return 0; // inside inner radius of circle
-        } else if (distance(xtouch, ytouch, x1, y1) <= buttonrad) {
-            return 1;
-        } else if (distance(xtouch, ytouch, x2, y2) <= buttonrad) {
-            return 2;
-        } else if (distance(xtouch, ytouch, x3, y3) <= buttonrad) {
-            return 3;
-        } else if (distance(xtouch, ytouch, x4, y4) <= buttonrad) {
-            return 4;
-        } else if (distance(xtouch, ytouch, x5, y5) <= buttonrad) {
-            return 5;
-        } else if (distance(xtouch, ytouch, x6, y6) <= buttonrad) {
-            return 6;
-        } else if (distance(xtouch, ytouch, x7, y7) <= buttonrad) {
-            return 7;
-        } else if (distance(xtouch, ytouch, x8, y8) <= buttonrad) {
-            return 8;
-        } else {
-            return -1;
-        }
-    }
-    */
 
 }
 
