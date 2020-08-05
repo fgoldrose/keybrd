@@ -1,4 +1,4 @@
-package com.example.keybird;
+package com.example.rotakey;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -10,7 +10,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.graphics.Path;
-import com.example.keybird.Keyboard.Key;
+import com.example.rotakey.MyKeyboard.Key;
 
 
 public class MyKeyboardView extends View {
@@ -28,7 +28,7 @@ public class MyKeyboardView extends View {
 
     private Key start;
 
-    private Keyboard keyboard;
+    private MyKeyboard keyboard;
 
     private MyListener listener = null;
 
@@ -43,7 +43,7 @@ public class MyKeyboardView extends View {
         this.listener = listener;
     }
 
-    public void setKeyboard(Keyboard k){
+    public void setKeyboard(MyKeyboard k){
         this.keyboard = k;
     }
 
@@ -51,7 +51,7 @@ public class MyKeyboardView extends View {
         return Math.sqrt(Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2));
     }
 
-    private Keyboard.Key getKey(float ex, float ey, float centerx, float centery, float outerradius, float innerradius){
+    private MyKeyboard.Key getKey(float ex, float ey, float centerx, float centery, float outerradius, float innerradius){
         int position = getSegment(ex, ey, centerx, centery, outerradius, innerradius);
         if(position != -1){
             return this.keyboard.getKey(position);
@@ -61,24 +61,24 @@ public class MyKeyboardView extends View {
         }
     }
 
-    private void handleAction(Keyboard.Action a){
+    private void handleAction(MyKeyboard.Action a){
         if (a == null){
             return;
         }
 
         switch(a.action){
-            case Keyboard.DELETE:
+            case MyKeyboard.DELETE:
                 listener.onBackspace();
                 break;
-            case Keyboard.ENTER:
+            case MyKeyboard.ENTER:
                 listener.onEnter();
                 break;
-            case Keyboard.INPUT:
+            case MyKeyboard.INPUT:
                 if (a.text != null) {
-                    if(keyboard.mode == Keyboard.SHIFTED) {
+                    if(keyboard.mode == MyKeyboard.SHIFTED) {
                         listener.onText(a.text.toUpperCase());
                         if(!keyboard.capslock){
-                            keyboard.mode = Keyboard.NORMAL;
+                            keyboard.mode = MyKeyboard.NORMAL;
                         }
                     }
                     else{
@@ -89,16 +89,16 @@ public class MyKeyboardView extends View {
                     //listener.onCode(a.arg);
                 }
                 break;
-            case Keyboard.MODE_CHANGE:
+            case MyKeyboard.MODE_CHANGE:
                 keyboard.mode = a.arg;
                 break;
-            case Keyboard.CAPSLOCK:
+            case MyKeyboard.CAPSLOCK:
                 if(keyboard.capslock){
                     keyboard.capslock = false;
-                    keyboard.mode = Keyboard.NORMAL;
+                    keyboard.mode = MyKeyboard.NORMAL;
                 }
                 else{
-                    keyboard.mode = Keyboard.SHIFTED; // Should already be true
+                    keyboard.mode = MyKeyboard.SHIFTED; // Should already be true
                     keyboard.capslock = true;
                 }
                 break;
@@ -119,8 +119,8 @@ public class MyKeyboardView extends View {
         float ex = event.getX(index);
         float ey = event.getY(index);
 
-        Keyboard.Action a;
-        Keyboard.Key k = getKey(ex, ey, centerx, centery, outerradius, innerradius);
+        MyKeyboard.Action a;
+        MyKeyboard.Key k = getKey(ex, ey, centerx, centery, outerradius, innerradius);
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_POINTER_UP:
@@ -198,9 +198,9 @@ public class MyKeyboardView extends View {
 
             Paint paint = new Paint();
             if (keyboard.curkey == k) {
-                paint.setColor(Color.GRAY);
+                paint.setColor(getResources().getColor(R.color.colorHighlight));
             } else {
-                paint.setColor(Color.WHITE);
+                paint.setColor(getResources().getColor(R.color.colorBG));
             }
 
             if (k.position == 0) {
@@ -239,7 +239,7 @@ public class MyKeyboardView extends View {
         double dist = distance(xtouch, ytouch, xcenter, ycenter);
         if (dist < innerrad) {
             return 0; // inside inner radius of circle
-        } else if (dist <= outerrad){
+        } else {//if (dist <= outerrad){
             double y = ytouch - ycenter;
             double x = xtouch - xcenter;
             double pf = (Math.sqrt(2) - 1) * x; //positive flat
@@ -267,9 +267,9 @@ public class MyKeyboardView extends View {
                 return -2; // should never return
             }
         }
-        else {
+        /*else {
             return -1; //outside outer radius of circle
-        }
+        }*/
     }
 
 }

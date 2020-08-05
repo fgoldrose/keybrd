@@ -1,8 +1,8 @@
-package com.example.keybird;
+package com.example.rotakey;
 
 import java.util.HashMap;
 
-public class Keyboard {
+public class MyKeyboard {
 
     // Define modes
     public static final int NORMAL = 0;
@@ -28,7 +28,7 @@ public class Keyboard {
     private Key[] keys;
     private HashMap<KeyPair, Action> actions;
 
-    Keyboard(){
+    MyKeyboard(){
         this.mode = NORMAL;
         this.curkey = null;
         this.keys = new Key[9];
@@ -104,7 +104,7 @@ public class Keyboard {
     class Key {
 
         int position;
-        Keyboard parent;
+        MyKeyboard parent;
 
         // offsets to get to center of key when multiplied by keyboard radius
         float xoffset;
@@ -116,7 +116,7 @@ public class Keyboard {
         // Action on single key click, if any
         Action clickaction;
 
-        Key(Keyboard parent, int p, float xoffset, float yoffset) {
+        Key(MyKeyboard parent, int p, float xoffset, float yoffset) {
             this.parent = parent;
             this.position = p;
             this.xoffset = xoffset;

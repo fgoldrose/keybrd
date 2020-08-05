@@ -1,7 +1,6 @@
-package com.example.keybird;
+package com.example.rotakey;
 
 import android.inputmethodservice.InputMethodService;
-import android.support.v4.view.KeyEventDispatcher;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -11,7 +10,7 @@ public class KeyboardIME extends InputMethodService implements MyKeyboardView.My
 
     @Override
     public View onCreateInputView(){
-        Keyboard keyboard = new Keyboard();
+        MyKeyboard keyboard = new MyKeyboard();
         keyboard.setupCenter();
         keyboard.setupNormal();
         keyboard.setupSymbols();

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.keybird">
+    package="com.example.rotakey">
 
     <application
         android:allowBackup="true"
@@ -10,7 +10,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <service android:name="KeyboardIME"
+        <service android:name="com.example.rotakey.KeyboardIME"
             android:label="@string/input_label"
             android:permission="android.permission.BIND_INPUT_METHOD">
             <intent-filter>

@@ -1,4 +1,4 @@
-package com.example.keybird;
+package com.example.rotakey;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.example.keybird", appContext.getPackageName());
+        assertEquals("com.example.rotakey", appContext.getPackageName());
     }
 }
