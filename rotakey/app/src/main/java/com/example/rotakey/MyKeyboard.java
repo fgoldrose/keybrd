@@ -22,7 +22,7 @@ public class MyKeyboard {
 
     public int mode;
     public Key curkey;
-
+    public Key secondkey; // second key being pressed if using multitouch
     public boolean capslock;
 
     private Key[] keys;
@@ -31,6 +31,7 @@ public class MyKeyboard {
     MyKeyboard(){
         this.mode = NORMAL;
         this.curkey = null;
+        this.secondkey = null;
         this.keys = new Key[9];
         this.actions = new HashMap<KeyPair, Action>();
         this.capslock = false;
@@ -46,6 +47,16 @@ public class MyKeyboard {
         keys[6] = new Key(this,6, -angle, -angle);
         keys[7] = new Key(this,7,-1, 0);
         keys[8] = new Key(this,8,-angle, angle);
+    }
+
+    public void reset(){
+        this.mode = NORMAL;
+        this.curkey = null;
+        this.secondkey = null;
+        this.capslock = false;
+        for (int i = 1; i <= 8; i++) {
+            keys[i].setLabel("");
+        }
     }
 
     public Key getKey(int position){
@@ -68,21 +79,32 @@ public class MyKeyboard {
 
     public void setCurkey(Key k){
         this.curkey = k;
-        for(int i = 1; i <= 8; i++){
-            Action ac = getAction(keys[i], k);
-            if (ac != null) {
-                keys[i].setLabel(ac.label);
+        if(secondkey == null) {
+            for (int i = 1; i <= 8; i++) {
+                Action ac = getAction(keys[i], k);
+                if (ac != null) {
+                    keys[i].setLabel(ac.label);
+                } else {
+                    keys[i].setLabel("");
+                }
             }
-            else{
-                keys[i].setLabel("");
+            if (k != null && capslock && k.position == 0) {
+                keys[5].setLabel("lower");
             }
+        }
+    }
+
+    public void setSecondkey(Key k) {
+        this.secondkey = k;
+        for (int i = 1; i <= 8; i++) {
+            keys[i].setLabel("");
         }
     }
 
     class Action {
         int action;
         int arg;
-        String text; //Maybe send text instead of a key code.
+        String text; //text to send if action is input
 
         String label;
 
@@ -289,274 +311,6 @@ public class MyKeyboard {
         actions.put(new KeyPair(keys[6], keys[7], SYMBOLS), new Action(INPUT, ":"));
         actions.put(new KeyPair(keys[6], keys[8], SYMBOLS), new Action(INPUT, ";"));
         actions.put(new KeyPair(keys[7], keys[8], SYMBOLS), new Action(INPUT, "_"));
-    }
-
-
-    public void setupNormal2(){
-        // for testing
-
-        //Normal mode
-        actions.put(new KeyPair(keys[3], keys[8], NORMAL), new Action(INPUT, "'"));
-        actions.put(new KeyPair(keys[4], keys[8], NORMAL), new Action(INPUT, "\""));
-
-        actions.put(new KeyPair(keys[1], keys[3], NORMAL), new Action(INPUT, "y"));
-        actions.put(new KeyPair(keys[2], keys[4], NORMAL), new Action(INPUT, "w"));
-        actions.put(new KeyPair(keys[3], keys[4], NORMAL), new Action(INPUT, "q"));
-        actions.put(new KeyPair(keys[1], keys[6], NORMAL), new Action(INPUT, "r"));
-        actions.put(new KeyPair(keys[2], keys[8], NORMAL), new Action(INPUT, "z"));
-        actions.put(new KeyPair(keys[4], keys[6], NORMAL), new Action(INPUT, "d"));
-        actions.put(new KeyPair(keys[5], keys[7], NORMAL), new Action(INPUT, "s"));
-        actions.put(new KeyPair(keys[1], keys[2], NORMAL), new Action(INPUT, "a"));
-        actions.put(new KeyPair(keys[7], keys[8], NORMAL), new Action(INPUT, "k"));
-        actions.put(new KeyPair(keys[3], keys[5], NORMAL), new Action(INPUT, "u"));
-        actions.put(new KeyPair(keys[1], keys[5], NORMAL), new Action(INPUT, "o"));
-        actions.put(new KeyPair(keys[4], keys[7], NORMAL), new Action(INPUT, "v"));
-        actions.put(new KeyPair(keys[1], keys[8], NORMAL), new Action(INPUT, "p"));
-        actions.put(new KeyPair(keys[6], keys[8], NORMAL), new Action(INPUT, "x"));
-        actions.put(new KeyPair(keys[3], keys[6], NORMAL), new Action(INPUT, "l"));
-        actions.put(new KeyPair(keys[5], keys[6], NORMAL), new Action(INPUT, "i"));
-        actions.put(new KeyPair(keys[2], keys[7], NORMAL), new Action(INPUT, "h"));
-        actions.put(new KeyPair(keys[1], keys[7], NORMAL), new Action(INPUT, "c"));
-        actions.put(new KeyPair(keys[2], keys[5], NORMAL), new Action(INPUT, "t"));
-        actions.put(new KeyPair(keys[1], keys[4], NORMAL), new Action(INPUT, "j"));
-        actions.put(new KeyPair(keys[5], keys[8], NORMAL), new Action(INPUT, "m"));
-        actions.put(new KeyPair(keys[2], keys[6], NORMAL), new Action(INPUT, "n"));
-        actions.put(new KeyPair(keys[3], keys[7], NORMAL), new Action(INPUT, "b"));
-        actions.put(new KeyPair(keys[2], keys[3], NORMAL), new Action(INPUT, "g"));
-        actions.put(new KeyPair(keys[6], keys[7], NORMAL), new Action(INPUT, "e"));
-        actions.put(new KeyPair(keys[4], keys[5], NORMAL), new Action(INPUT, "f"));
-
-        // Shifted mode
-        actions.put(new KeyPair(keys[3], keys[8], SHIFTED), new Action(INPUT, "'"));
-        actions.put(new KeyPair(keys[4], keys[8], SHIFTED), new Action(INPUT, "\""));
-
-        actions.put(new KeyPair(keys[1], keys[3], SHIFTED), new Action(INPUT, "Y"));
-        actions.put(new KeyPair(keys[2], keys[4], SHIFTED), new Action(INPUT, "W"));
-        actions.put(new KeyPair(keys[3], keys[4], SHIFTED), new Action(INPUT, "Q"));
-        actions.put(new KeyPair(keys[1], keys[6], SHIFTED), new Action(INPUT, "R"));
-        actions.put(new KeyPair(keys[2], keys[8], SHIFTED), new Action(INPUT, "Z"));
-        actions.put(new KeyPair(keys[4], keys[6], SHIFTED), new Action(INPUT, "D"));
-        actions.put(new KeyPair(keys[5], keys[7], SHIFTED), new Action(INPUT, "S"));
-        actions.put(new KeyPair(keys[1], keys[2], SHIFTED), new Action(INPUT, "A"));
-        actions.put(new KeyPair(keys[7], keys[8], SHIFTED), new Action(INPUT, "K"));
-        actions.put(new KeyPair(keys[3], keys[5], SHIFTED), new Action(INPUT, "U"));
-        actions.put(new KeyPair(keys[1], keys[5], SHIFTED), new Action(INPUT, "O"));
-        actions.put(new KeyPair(keys[4], keys[7], SHIFTED), new Action(INPUT, "V"));
-        actions.put(new KeyPair(keys[1], keys[8], SHIFTED), new Action(INPUT, "P"));
-        actions.put(new KeyPair(keys[6], keys[8], SHIFTED), new Action(INPUT, "X"));
-        actions.put(new KeyPair(keys[3], keys[6], SHIFTED), new Action(INPUT, "L"));
-        actions.put(new KeyPair(keys[5], keys[6], SHIFTED), new Action(INPUT, "I"));
-        actions.put(new KeyPair(keys[2], keys[7], SHIFTED), new Action(INPUT, "H"));
-        actions.put(new KeyPair(keys[1], keys[7], SHIFTED), new Action(INPUT, "C"));
-        actions.put(new KeyPair(keys[2], keys[5], SHIFTED), new Action(INPUT, "T"));
-        actions.put(new KeyPair(keys[1], keys[4], SHIFTED), new Action(INPUT, "J"));
-        actions.put(new KeyPair(keys[5], keys[8], SHIFTED), new Action(INPUT, "M"));
-        actions.put(new KeyPair(keys[2], keys[6], SHIFTED), new Action(INPUT, "N"));
-        actions.put(new KeyPair(keys[3], keys[7], SHIFTED), new Action(INPUT, "B"));
-        actions.put(new KeyPair(keys[2], keys[3], SHIFTED), new Action(INPUT, "G"));
-        actions.put(new KeyPair(keys[6], keys[7], SHIFTED), new Action(INPUT, "E"));
-        actions.put(new KeyPair(keys[4], keys[5], SHIFTED), new Action(INPUT, "F"));
-
-    }
-
-
-    public void setupNormal3(){
-        // for testing
-
-        actions.put(new KeyPair(keys[6], keys[8], NORMAL), new Action(INPUT, "'"));
-        actions.put(new KeyPair(keys[7], keys[8], NORMAL), new Action(INPUT, "\""));
-
-        actions.put(new KeyPair(keys[3], keys[6], NORMAL), new Action(INPUT, "y"));
-        actions.put(new KeyPair(keys[5], keys[7], NORMAL), new Action(INPUT, "w"));
-        actions.put(new KeyPair(keys[6], keys[7], NORMAL), new Action(INPUT, "q"));
-        actions.put(new KeyPair(keys[3], keys[2], NORMAL), new Action(INPUT, "r"));
-        actions.put(new KeyPair(keys[5], keys[8], NORMAL), new Action(INPUT, "z"));
-        actions.put(new KeyPair(keys[7], keys[2], NORMAL), new Action(INPUT, "d"));
-        actions.put(new KeyPair(keys[1], keys[4], NORMAL), new Action(INPUT, "s"));
-        actions.put(new KeyPair(keys[3], keys[5], NORMAL), new Action(INPUT, "a"));
-        actions.put(new KeyPair(keys[4], keys[8], NORMAL), new Action(INPUT, "k"));
-        actions.put(new KeyPair(keys[6], keys[1], NORMAL), new Action(INPUT, "u"));
-        actions.put(new KeyPair(keys[3], keys[1], NORMAL), new Action(INPUT, "o"));
-        actions.put(new KeyPair(keys[7], keys[4], NORMAL), new Action(INPUT, "v"));
-        actions.put(new KeyPair(keys[3], keys[8], NORMAL), new Action(INPUT, "p"));
-        actions.put(new KeyPair(keys[2], keys[8], NORMAL), new Action(INPUT, "x"));
-        actions.put(new KeyPair(keys[6], keys[2], NORMAL), new Action(INPUT, "l"));
-        actions.put(new KeyPair(keys[1], keys[2], NORMAL), new Action(INPUT, "i"));
-        actions.put(new KeyPair(keys[5], keys[4], NORMAL), new Action(INPUT, "h"));
-        actions.put(new KeyPair(keys[3], keys[4], NORMAL), new Action(INPUT, "c"));
-        actions.put(new KeyPair(keys[5], keys[1], NORMAL), new Action(INPUT, "t"));
-        actions.put(new KeyPair(keys[3], keys[7], NORMAL), new Action(INPUT, "j"));
-        actions.put(new KeyPair(keys[1], keys[8], NORMAL), new Action(INPUT, "m"));
-        actions.put(new KeyPair(keys[5], keys[2], NORMAL), new Action(INPUT, "n"));
-        actions.put(new KeyPair(keys[6], keys[4], NORMAL), new Action(INPUT, "b"));
-        actions.put(new KeyPair(keys[5], keys[6], NORMAL), new Action(INPUT, "g"));
-        actions.put(new KeyPair(keys[2], keys[4], NORMAL), new Action(INPUT, "e"));
-        actions.put(new KeyPair(keys[7], keys[1], NORMAL), new Action(INPUT, "f"));
-
-        // Shifted mode
-        actions.put(new KeyPair(keys[6], keys[8], SHIFTED), new Action(INPUT, "'"));
-        actions.put(new KeyPair(keys[7], keys[8], SHIFTED), new Action(INPUT, "\""));
-        actions.put(new KeyPair(keys[3], keys[6], SHIFTED), new Action(INPUT, "Y"));
-        actions.put(new KeyPair(keys[5], keys[7], SHIFTED), new Action(INPUT, "W"));
-        actions.put(new KeyPair(keys[6], keys[7], SHIFTED), new Action(INPUT, "Q"));
-        actions.put(new KeyPair(keys[3], keys[2], SHIFTED), new Action(INPUT, "R"));
-        actions.put(new KeyPair(keys[5], keys[8], SHIFTED), new Action(INPUT, "Z"));
-        actions.put(new KeyPair(keys[7], keys[2], SHIFTED), new Action(INPUT, "D"));
-        actions.put(new KeyPair(keys[1], keys[4], SHIFTED), new Action(INPUT, "S"));
-        actions.put(new KeyPair(keys[3], keys[5], SHIFTED), new Action(INPUT, "A"));
-        actions.put(new KeyPair(keys[4], keys[8], SHIFTED), new Action(INPUT, "K"));
-        actions.put(new KeyPair(keys[6], keys[1], SHIFTED), new Action(INPUT, "U"));
-        actions.put(new KeyPair(keys[3], keys[1], SHIFTED), new Action(INPUT, "O"));
-        actions.put(new KeyPair(keys[7], keys[4], SHIFTED), new Action(INPUT, "V"));
-        actions.put(new KeyPair(keys[3], keys[8], SHIFTED), new Action(INPUT, "P"));
-        actions.put(new KeyPair(keys[2], keys[8], SHIFTED), new Action(INPUT, "X"));
-        actions.put(new KeyPair(keys[6], keys[2], SHIFTED), new Action(INPUT, "L"));
-        actions.put(new KeyPair(keys[1], keys[2], SHIFTED), new Action(INPUT, "I"));
-        actions.put(new KeyPair(keys[5], keys[4], SHIFTED), new Action(INPUT, "H"));
-        actions.put(new KeyPair(keys[3], keys[4], SHIFTED), new Action(INPUT, "C"));
-        actions.put(new KeyPair(keys[5], keys[1], SHIFTED), new Action(INPUT, "T"));
-        actions.put(new KeyPair(keys[3], keys[7], SHIFTED), new Action(INPUT, "J"));
-        actions.put(new KeyPair(keys[1], keys[8], SHIFTED), new Action(INPUT, "M"));
-        actions.put(new KeyPair(keys[5], keys[2], SHIFTED), new Action(INPUT, "N"));
-        actions.put(new KeyPair(keys[6], keys[4], SHIFTED), new Action(INPUT, "B"));
-        actions.put(new KeyPair(keys[5], keys[6], SHIFTED), new Action(INPUT, "G"));
-        actions.put(new KeyPair(keys[2], keys[4], SHIFTED), new Action(INPUT, "E"));
-        actions.put(new KeyPair(keys[7], keys[1], SHIFTED), new Action(INPUT, "F"));
-
-
-    }
-
-    public void setupNormal4(){
-        // for testing
-
-        //Normal mode
-        actions.put(new KeyPair(keys[7], keys[2], NORMAL), new Action(INPUT, "'"));
-        actions.put(new KeyPair(keys[3], keys[2], NORMAL), new Action(INPUT, "\""));
-
-        actions.put(new KeyPair(keys[6], keys[7], NORMAL), new Action(INPUT, "y"));
-        actions.put(new KeyPair(keys[5], keys[3], NORMAL), new Action(INPUT, "w"));
-        actions.put(new KeyPair(keys[7], keys[3], NORMAL), new Action(INPUT, "q"));
-        actions.put(new KeyPair(keys[6], keys[8], NORMAL), new Action(INPUT, "r"));
-        actions.put(new KeyPair(keys[5], keys[2], NORMAL), new Action(INPUT, "z"));
-        actions.put(new KeyPair(keys[3], keys[8], NORMAL), new Action(INPUT, "d"));
-        actions.put(new KeyPair(keys[1], keys[4], NORMAL), new Action(INPUT, "s"));
-        actions.put(new KeyPair(keys[6], keys[5], NORMAL), new Action(INPUT, "a"));
-        actions.put(new KeyPair(keys[4], keys[2], NORMAL), new Action(INPUT, "k"));
-        actions.put(new KeyPair(keys[7], keys[1], NORMAL), new Action(INPUT, "u"));
-        actions.put(new KeyPair(keys[6], keys[1], NORMAL), new Action(INPUT, "o"));
-        actions.put(new KeyPair(keys[3], keys[4], NORMAL), new Action(INPUT, "v"));
-        actions.put(new KeyPair(keys[6], keys[2], NORMAL), new Action(INPUT, "p"));
-        actions.put(new KeyPair(keys[8], keys[2], NORMAL), new Action(INPUT, "x"));
-        actions.put(new KeyPair(keys[7], keys[8], NORMAL), new Action(INPUT, "l"));
-        actions.put(new KeyPair(keys[1], keys[8], NORMAL), new Action(INPUT, "i"));
-        actions.put(new KeyPair(keys[5], keys[4], NORMAL), new Action(INPUT, "h"));
-        actions.put(new KeyPair(keys[6], keys[4], NORMAL), new Action(INPUT, "c"));
-        actions.put(new KeyPair(keys[5], keys[1], NORMAL), new Action(INPUT, "t"));
-        actions.put(new KeyPair(keys[6], keys[3], NORMAL), new Action(INPUT, "j"));
-        actions.put(new KeyPair(keys[1], keys[2], NORMAL), new Action(INPUT, "m"));
-        actions.put(new KeyPair(keys[5], keys[8], NORMAL), new Action(INPUT, "n"));
-        actions.put(new KeyPair(keys[7], keys[4], NORMAL), new Action(INPUT, "b"));
-        actions.put(new KeyPair(keys[5], keys[7], NORMAL), new Action(INPUT, "g"));
-        actions.put(new KeyPair(keys[8], keys[4], NORMAL), new Action(INPUT, "e"));
-        actions.put(new KeyPair(keys[3], keys[1], NORMAL), new Action(INPUT, "f"));
-
-        // Shifted mode
-        actions.put(new KeyPair(keys[7], keys[2], SHIFTED), new Action(INPUT, "'"));
-        actions.put(new KeyPair(keys[3], keys[2], SHIFTED), new Action(INPUT, "\""));
-
-        actions.put(new KeyPair(keys[6], keys[7], SHIFTED), new Action(INPUT, "Y"));
-        actions.put(new KeyPair(keys[5], keys[3], SHIFTED), new Action(INPUT, "W"));
-        actions.put(new KeyPair(keys[7], keys[3], SHIFTED), new Action(INPUT, "Q"));
-        actions.put(new KeyPair(keys[6], keys[8], SHIFTED), new Action(INPUT, "R"));
-        actions.put(new KeyPair(keys[5], keys[2], SHIFTED), new Action(INPUT, "Z"));
-        actions.put(new KeyPair(keys[3], keys[8], SHIFTED), new Action(INPUT, "D"));
-        actions.put(new KeyPair(keys[1], keys[4], SHIFTED), new Action(INPUT, "S"));
-        actions.put(new KeyPair(keys[6], keys[5], SHIFTED), new Action(INPUT, "A"));
-        actions.put(new KeyPair(keys[4], keys[2], SHIFTED), new Action(INPUT, "K"));
-        actions.put(new KeyPair(keys[7], keys[1], SHIFTED), new Action(INPUT, "U"));
-        actions.put(new KeyPair(keys[6], keys[1], SHIFTED), new Action(INPUT, "O"));
-        actions.put(new KeyPair(keys[3], keys[4], SHIFTED), new Action(INPUT, "V"));
-        actions.put(new KeyPair(keys[6], keys[2], SHIFTED), new Action(INPUT, "P"));
-        actions.put(new KeyPair(keys[8], keys[2], SHIFTED), new Action(INPUT, "X"));
-        actions.put(new KeyPair(keys[7], keys[8], SHIFTED), new Action(INPUT, "L"));
-        actions.put(new KeyPair(keys[1], keys[8], SHIFTED), new Action(INPUT, "I"));
-        actions.put(new KeyPair(keys[5], keys[4], SHIFTED), new Action(INPUT, "H"));
-        actions.put(new KeyPair(keys[6], keys[4], SHIFTED), new Action(INPUT, "C"));
-        actions.put(new KeyPair(keys[5], keys[1], SHIFTED), new Action(INPUT, "T"));
-        actions.put(new KeyPair(keys[6], keys[3], SHIFTED), new Action(INPUT, "J"));
-        actions.put(new KeyPair(keys[1], keys[2], SHIFTED), new Action(INPUT, "M"));
-        actions.put(new KeyPair(keys[5], keys[8], SHIFTED), new Action(INPUT, "N"));
-        actions.put(new KeyPair(keys[7], keys[4], SHIFTED), new Action(INPUT, "B"));
-        actions.put(new KeyPair(keys[5], keys[7], SHIFTED), new Action(INPUT, "G"));
-        actions.put(new KeyPair(keys[8], keys[4], SHIFTED), new Action(INPUT, "E"));
-        actions.put(new KeyPair(keys[3], keys[1], SHIFTED), new Action(INPUT, "F"));
-    }
-
-
-    public void setupNormal5() {
-        // for testing
-
-        //Normal mode
-        actions.put(new KeyPair(keys[7], keys[2], NORMAL), new Action(INPUT, "'"));
-        actions.put(new KeyPair(keys[3], keys[2], NORMAL), new Action(INPUT, "\""));
-
-        actions.put(new KeyPair(keys[6], keys[7], NORMAL), new Action(INPUT, "y"));
-        actions.put(new KeyPair(keys[4], keys[3], NORMAL), new Action(INPUT, "w"));
-        actions.put(new KeyPair(keys[7], keys[3], NORMAL), new Action(INPUT, "q"));
-        actions.put(new KeyPair(keys[6], keys[1], NORMAL), new Action(INPUT, "r"));
-        actions.put(new KeyPair(keys[4], keys[2], NORMAL), new Action(INPUT, "z"));
-        actions.put(new KeyPair(keys[3], keys[1], NORMAL), new Action(INPUT, "d"));
-        actions.put(new KeyPair(keys[8], keys[5], NORMAL), new Action(INPUT, "s"));
-        actions.put(new KeyPair(keys[6], keys[4], NORMAL), new Action(INPUT, "a"));
-        actions.put(new KeyPair(keys[5], keys[2], NORMAL), new Action(INPUT, "k"));
-        actions.put(new KeyPair(keys[7], keys[8], NORMAL), new Action(INPUT, "u"));
-        actions.put(new KeyPair(keys[6], keys[8], NORMAL), new Action(INPUT, "o"));
-        actions.put(new KeyPair(keys[3], keys[5], NORMAL), new Action(INPUT, "v"));
-        actions.put(new KeyPair(keys[6], keys[2], NORMAL), new Action(INPUT, "p"));
-        actions.put(new KeyPair(keys[1], keys[2], NORMAL), new Action(INPUT, "x"));
-        actions.put(new KeyPair(keys[7], keys[1], NORMAL), new Action(INPUT, "l"));
-        actions.put(new KeyPair(keys[8], keys[1], NORMAL), new Action(INPUT, "i"));
-        actions.put(new KeyPair(keys[4], keys[5], NORMAL), new Action(INPUT, "h"));
-        actions.put(new KeyPair(keys[6], keys[5], NORMAL), new Action(INPUT, "c"));
-        actions.put(new KeyPair(keys[4], keys[8], NORMAL), new Action(INPUT, "t"));
-        actions.put(new KeyPair(keys[6], keys[3], NORMAL), new Action(INPUT, "j"));
-        actions.put(new KeyPair(keys[8], keys[2], NORMAL), new Action(INPUT, "m"));
-        actions.put(new KeyPair(keys[4], keys[1], NORMAL), new Action(INPUT, "n"));
-        actions.put(new KeyPair(keys[7], keys[5], NORMAL), new Action(INPUT, "b"));
-        actions.put(new KeyPair(keys[4], keys[7], NORMAL), new Action(INPUT, "g"));
-        actions.put(new KeyPair(keys[1], keys[5], NORMAL), new Action(INPUT, "e"));
-        actions.put(new KeyPair(keys[3], keys[8], NORMAL), new Action(INPUT, "f"));
-
-        // Shifted mode
-        actions.put(new KeyPair(keys[7], keys[2], SHIFTED), new Action(INPUT, "'"));
-        actions.put(new KeyPair(keys[3], keys[2], SHIFTED), new Action(INPUT, "\""));
-
-        actions.put(new KeyPair(keys[6], keys[7], SHIFTED), new Action(INPUT, "Y"));
-        actions.put(new KeyPair(keys[4], keys[3], SHIFTED), new Action(INPUT, "W"));
-        actions.put(new KeyPair(keys[7], keys[3], SHIFTED), new Action(INPUT, "Q"));
-        actions.put(new KeyPair(keys[6], keys[1], SHIFTED), new Action(INPUT, "R"));
-        actions.put(new KeyPair(keys[4], keys[2], SHIFTED), new Action(INPUT, "Z"));
-        actions.put(new KeyPair(keys[3], keys[1], SHIFTED), new Action(INPUT, "D"));
-        actions.put(new KeyPair(keys[8], keys[5], SHIFTED), new Action(INPUT, "S"));
-        actions.put(new KeyPair(keys[6], keys[4], SHIFTED), new Action(INPUT, "A"));
-        actions.put(new KeyPair(keys[5], keys[2], SHIFTED), new Action(INPUT, "K"));
-        actions.put(new KeyPair(keys[7], keys[8], SHIFTED), new Action(INPUT, "U"));
-        actions.put(new KeyPair(keys[6], keys[8], SHIFTED), new Action(INPUT, "O"));
-        actions.put(new KeyPair(keys[3], keys[5], SHIFTED), new Action(INPUT, "V"));
-        actions.put(new KeyPair(keys[6], keys[2], SHIFTED), new Action(INPUT, "P"));
-        actions.put(new KeyPair(keys[1], keys[2], SHIFTED), new Action(INPUT, "X"));
-        actions.put(new KeyPair(keys[7], keys[1], SHIFTED), new Action(INPUT, "L"));
-        actions.put(new KeyPair(keys[8], keys[1], SHIFTED), new Action(INPUT, "I"));
-        actions.put(new KeyPair(keys[4], keys[5], SHIFTED), new Action(INPUT, "H"));
-        actions.put(new KeyPair(keys[6], keys[5], SHIFTED), new Action(INPUT, "C"));
-        actions.put(new KeyPair(keys[4], keys[8], SHIFTED), new Action(INPUT, "T"));
-        actions.put(new KeyPair(keys[6], keys[3], SHIFTED), new Action(INPUT, "J"));
-        actions.put(new KeyPair(keys[8], keys[2], SHIFTED), new Action(INPUT, "M"));
-        actions.put(new KeyPair(keys[4], keys[1], SHIFTED), new Action(INPUT, "N"));
-        actions.put(new KeyPair(keys[7], keys[5], SHIFTED), new Action(INPUT, "B"));
-        actions.put(new KeyPair(keys[4], keys[7], SHIFTED), new Action(INPUT, "G"));
-        actions.put(new KeyPair(keys[1], keys[5], SHIFTED), new Action(INPUT, "E"));
-        actions.put(new KeyPair(keys[3], keys[8], SHIFTED), new Action(INPUT, "F"));
     }
 }
 

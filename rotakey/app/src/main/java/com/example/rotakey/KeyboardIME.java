@@ -8,9 +8,10 @@ import android.view.inputmethod.EditorInfo;
 
 public class KeyboardIME extends InputMethodService implements MyKeyboardView.MyListener {
 
+    MyKeyboard keyboard;
     @Override
     public View onCreateInputView(){
-        MyKeyboard keyboard = new MyKeyboard();
+        keyboard = new MyKeyboard();
         keyboard.setupCenter();
         keyboard.setupNormal();
         keyboard.setupSymbols();
@@ -20,6 +21,12 @@ public class KeyboardIME extends InputMethodService implements MyKeyboardView.My
         kbv.setListener(this);
         kbv.setKeyboard(keyboard);
         return layout;
+    }
+
+    @Override
+    public void onStartInputView(EditorInfo e, boolean b){
+        super.onStartInputView(e, b);
+        keyboard.reset();
     }
 
     public void onText(String text){

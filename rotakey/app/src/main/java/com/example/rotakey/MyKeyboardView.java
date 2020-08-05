@@ -22,8 +22,8 @@ public class MyKeyboardView extends View {
     }
 
     // size of
-    float outerpercent = (float) 0.7;
-    float innerpercent = (float) 0.6;
+    float outerpercent = (float) 0.8;
+    float innerpercent = (float) 0.7;
 
 
     private Key start;
@@ -124,7 +124,8 @@ public class MyKeyboardView extends View {
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_POINTER_UP:
-                // second finger leaves, start goes to where other finger is
+                // second finger up, start goes to where other finger is
+                keyboard.secondkey = null;
                 start = getKey(event.getX(oppindex), event.getY(oppindex), centerx, centery, outerradius, innerradius);
                 break;
             case MotionEvent.ACTION_UP:
@@ -145,6 +146,7 @@ public class MyKeyboardView extends View {
                 if (a != null) {
                     handleAction(a);
                 }
+                keyboard.setSecondkey(start);
                 start = k;
                 break;
             case MotionEvent.ACTION_DOWN:
@@ -197,7 +199,7 @@ public class MyKeyboardView extends View {
             float cy = centery + k.yoffset * (outerradius + innerradius) / 2;
 
             Paint paint = new Paint();
-            if (keyboard.curkey == k) {
+            if (keyboard.curkey == k || keyboard.secondkey == k) {
                 paint.setColor(getResources().getColor(R.color.colorHighlight));
             } else {
                 paint.setColor(getResources().getColor(R.color.colorBG));
